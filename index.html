@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="sv" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#10B981">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SE3 Batteri">
+    <link id="pwa-manifest-link" rel="manifest" href="">
+    <title>SE3 Batteriladdare - Natt & Urladdningsplanerare</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        darkbg: '#0B0F17',
+                        cardbg: '#131B2E',
+                        cardborder: '#1E293B',
+                        accent: '#10B981',
+                        accentdischarge: '#F59E0B'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0B0F17;
+            color: #E2E8F0;
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Custom range sliders */
+        input[type=range].charge-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 26px;
+            width: 26px;
+            border-radius: 50%;
+            background: #10B981;
+            cursor: pointer;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.7);
+            border: 3px solid #0B0F17;
+        }
+        input[type=range].discharge-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 26px;
+            width: 26px;
+            border-radius: 50%;
+            background: #F59E0B;
+            cursor: pointer;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.7);
+            border: 3px solid #0B0F17;
+        }
+        input[type=range]::-moz-range-thumb {
+            height: 26px;
+            width: 26px;
+            border-radius: 50%;
+            border: 3px solid #0B0F17;
+        }
+        input[type=range].charge-slider::-moz-range-thumb { background: #10B981; }
+        input[type=range].discharge-slider::-moz-range-thumb { background: #F59E0B; }
+
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0B0F17; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="min-h-screen bg-darkbg text-slate-100 antialiased pb-12 selection:bg-emerald-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-cardborder bg-cardbg/80 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-600 to-amber-500 flex items-center justify-center shadow-lg shadow-emerald-900/30">
+                    <i class="fa-solid fa-battery-three-quarters text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                        SE3 Batteriladdare
+                        <span class="text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full">Natt & Urladdning</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Laddning: 20:00–07:00 | Urladdning: Hela dygnet | Elområde SE3</p>
+                </div>
+            </div>
+
+            <!-- Header Action Controls -->
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm">
+                <!-- Install App Button -->
+                <button id="install-app-btn" title="Installera som PWA på Android/mobil" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 transition font-semibold text-emerald-300">
+                    <i class="fa-brands fa-android text-emerald-400 text-sm"></i>
+                    <span id="install-app-label">Installera app</span>
+                </button>
+
+                <!-- Status Badge -->
+                <div id="data-status-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 text-slate-300">
+                    <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse"></span>
+                    <span id="status-text" class="font-medium">Laddar spotpriser...</span>
+                </div>
+
+                <!-- Start From Now Toggle Button -->
+                <button id="start-now-btn" title="Sätt prisstart till nuvarande tidpunkt" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition font-medium text-slate-200">
+                    <i class="fa-solid fa-clock-rotate-left text-cyan-400 text-xs"></i>
+                    <span id="start-now-label">Starta nu</span>
+                </button>
+
+                <!-- Moms Toggle -->
+                <button id="vat-toggle-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition font-medium text-slate-200">
+                    <i class="fa-solid fa-percent text-emerald-400 text-xs"></i>
+                    <span id="vat-label">Exkl. moms</span>
+                </button>
+
+                <!-- Refresh Button -->
+                <button id="refetch-btn" title="Hämta om prisdata" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+
+        <!-- Controls Section: Charging & Discharging -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- LADDNINGSSTYRNING (CHARGE CONTROLS) -->
+            <div class="bg-cardbg border border-emerald-500/30 rounded-2xl p-5 shadow-xl relative overflow-hidden flex flex-col justify-between">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div>
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <div>
+                            <h2 class="text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-bolt text-emerald-400"></i> Batteriladdning (Billigaste)
+                            </h2>
+                            <p class="text-xs text-slate-400">Nattfönster: kl. 20:00 – 07:00 (Max 8 timmar)</p>
+                        </div>
+                        <div class="text-right">
+                            <div id="charge-duration-display" class="text-xl font-bold font-mono text-emerald-400">3 tim 0 min</div>
+                            <div id="charge-quarter-display" class="text-[11px] text-slate-400 font-mono">(12 kvartar)</div>
+                        </div>
+                    </div>
+
+                    <!-- Charge Slider -->
+                    <div class="space-y-3 my-3">
+                        <input type="range" id="charge-slider" min="1" max="32" value="12" step="1" 
+                               class="charge-slider w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 focus:outline-none">
+                        <div class="flex justify-between text-[11px] font-mono text-slate-400 px-1">
+                            <span>15m</span>
+                            <span>1t</span>
+                            <span>2t</span>
+                            <span>4t</span>
+                            <span>6t</span>
+                            <span>8t</span>
+                        </div>
+                    </div>
+
+                    <!-- Charge Presets -->
+                    <div class="pt-2 flex flex-wrap items-center gap-1.5 mb-4">
+                        <span class="text-[11px] text-slate-400 font-medium mr-1">Snabbval:</span>
+                        <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="1">15m</button>
+                        <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="4">1t</button>
+                        <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="8">2t</button>
+                        <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono font-semibold" data-quarters="12">3t</button>
+                        <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="16">4t</button>
+                        <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="24">6t</button>
+                        <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="32">8t</button>
+                    </div>
+                </div>
+
+                <!-- Charge Max Slots -->
+                <div class="pt-3 border-t border-slate-800">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold text-slate-300">Max laddslotar (sammanhängande)</span>
+                        <span id="charge-slot-limit-badge" class="text-[11px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded font-mono">Max 6 slotar</span>
+                    </div>
+                    <div class="grid grid-cols-6 gap-1.5">
+                        <button class="charge-slot-btn py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono font-bold text-xs" data-slots="1">1</button>
+                        <button class="charge-slot-btn py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono font-bold text-xs" data-slots="2">2</button>
+                        <button class="charge-slot-btn py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono font-bold text-xs" data-slots="3">3</button>
+                        <button class="charge-slot-btn py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono font-bold text-xs" data-slots="4">4</button>
+                        <button class="charge-slot-btn py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono font-bold text-xs" data-slots="5">5</button>
+                        <button class="charge-slot-btn py-1.5 rounded-lg border-2 border-emerald-500 bg-emerald-500/20 text-emerald-300 font-mono font-bold text-xs" data-slots="6">6</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- URLADDNINGSSTYRNING (DISCHARGE CONTROLS) -->
+            <div class="bg-cardbg border border-amber-500/30 rounded-2xl p-5 shadow-xl relative overflow-hidden flex flex-col justify-between">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-amber-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div>
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <div>
+                            <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-arrow-up-from-bracket text-amber-400"></i> Batteriurladdning (Dyraste)
+                            </h2>
+                            <p class="text-xs text-slate-400">Hela dygnet: Väljer dyraste priserna (Max 4 timmar)</p>
+                        </div>
+                        <div class="text-right">
+                            <div id="discharge-duration-display" class="text-xl font-bold font-mono text-amber-400">2 tim 0 min</div>
+                            <div id="discharge-quarter-display" class="text-[11px] text-slate-400 font-mono">(8 kvartar)</div>
+                        </div>
+                    </div>
+
+                    <!-- Discharge Slider -->
+                    <div class="space-y-3 my-3">
+                        <input type="range" id="discharge-slider" min="0" max="16" value="8" step="1" 
+                               class="discharge-slider w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500 focus:outline-none">
+                        <div class="flex justify-between text-[11px] font-mono text-slate-400 px-1">
+                            <span>Av</span>
+                            <span>30m</span>
+                            <span>1t</span>
+                            <span>2t</span>
+                            <span>3t</span>
+                            <span>4t (16 kv)</span>
+                        </div>
+                    </div>
+
+                    <!-- Discharge Presets -->
+                    <div class="pt-2 flex flex-wrap items-center gap-1.5 mb-4">
+                        <span class="text-[11px] text-slate-400 font-medium mr-1">Snabbval:</span>
+                        <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="0">Av</button>
+                        <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="1">15m</button>
+                        <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="2">30m</button>
+                        <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="4">1t</button>
+                        <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono font-semibold" data-quarters="8">2t</button>
+                        <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="12">3t</button>
+                        <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="16">4t</button>
+                    </div>
+                </div>
+
+                <!-- Discharge Max Slots -->
+                <div class="pt-3 border-t border-slate-800">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold text-slate-300">Max urladdningsslotar</span>
+                        <span id="discharge-slot-limit-badge" class="text-[11px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded font-mono">Max 6 slotar</span>
+                    </div>
+                    <div class="grid grid-cols-6 gap-1.5">
+                        <button class="discharge-slot-btn py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono font-bold text-xs" data-slots="1">1</button>
+                        <button class="discharge-slot-btn py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono font-bold text-xs" data-slots="2">2</button>
+                        <button class="discharge-slot-btn py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono font-bold text-xs" data-slots="3">3</button>
+                        <button class="discharge-slot-btn py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono font-bold text-xs" data-slots="4">4</button>
+                        <button class="discharge-slot-btn py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono font-bold text-xs" data-slots="5">5</button>
+                        <button class="discharge-slot-btn py-1.5 rounded-lg border-2 border-amber-500 bg-amber-500/20 text-amber-300 font-mono font-bold text-xs" data-slots="6">6</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <!-- Card 1: Medelpris Laddning -->
+            <div class="bg-cardbg border border-emerald-500/30 rounded-2xl p-4 relative overflow-hidden shadow-lg">
+                <div class="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Medelpris laddning</div>
+                <div id="kpi-avg-charge-price" class="text-2xl sm:text-3xl font-bold font-mono text-emerald-400">
+                    --,-- <span class="text-xs text-emerald-500 font-normal">öre/kWh</span>
+                </div>
+                <div id="kpi-charge-subtext" class="text-[11px] text-emerald-500/80 mt-1 font-mono">
+                    Valda laddkvartar
+                </div>
+            </div>
+
+            <!-- Card 2: Medelpris Urladdning -->
+            <div class="bg-cardbg border border-amber-500/30 rounded-2xl p-4 relative overflow-hidden shadow-lg">
+                <div class="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Medelpris urladdning</div>
+                <div id="kpi-avg-discharge-price" class="text-2xl sm:text-3xl font-bold font-mono text-amber-400">
+                    --,-- <span class="text-xs text-amber-500 font-normal">öre/kWh</span>
+                </div>
+                <div id="kpi-discharge-subtext" class="text-[11px] text-amber-500/80 mt-1 font-mono">
+                    Valda urladdningskvartar
+                </div>
+            </div>
+
+            <!-- Card 3: Arbitrage / Spread -->
+            <div class="bg-cardbg border border-cyan-500/30 rounded-2xl p-4 shadow-lg">
+                <div class="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Prisdiff / Arbitrage</div>
+                <div id="kpi-spread-price" class="text-2xl sm:text-3xl font-bold font-mono text-cyan-400">
+                    +--,-- <span class="text-xs text-cyan-500 font-normal">öre/kWh</span>
+                </div>
+                <div id="kpi-spread-subtext" class="text-[11px] text-cyan-500/80 mt-1 font-mono">
+                    Urladdningssnitt - Laddsnitt
+                </div>
+            </div>
+
+            <!-- Card 4: Slotar Använda -->
+            <div class="bg-cardbg border border-cardborder rounded-2xl p-4 shadow-lg">
+                <div class="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Slotar använda</div>
+                <div id="kpi-slots-summary" class="text-xl sm:text-2xl font-bold font-mono text-slate-200">
+                    <span class="text-emerald-400" id="kpi-charge-slots">0</span> <span class="text-xs text-slate-500">ladd</span> | <span class="text-amber-400" id="kpi-discharge-slots">0</span> <span class="text-xs text-slate-500">ur</span>
+                </div>
+                <div id="kpi-period-avg" class="text-[11px] text-slate-400 mt-1 font-mono">
+                    Hela periodens snitt: --,- öre
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Bar Chart -->
+        <div class="bg-cardbg border border-cardborder rounded-2xl p-5 shadow-xl relative">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div>
+                    <h2 id="chart-heading" class="text-base font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-chart-column text-emerald-400"></i>
+                        Prisprofil & Tidslinje (fram till 00:00 nästa dygn)
+                    </h2>
+                    <p class="text-xs text-slate-400">Gröna = Laddning | Amber = Urladdning | Streckad linje vid 07:00</p>
+                </div>
+                
+                <!-- Chart Legend -->
+                <div class="flex flex-wrap items-center gap-3 text-xs font-medium">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-sm bg-gradient-to-t from-emerald-600 to-teal-400 shadow-sm shadow-emerald-500/50"></span>
+                        <span class="text-emerald-300">Laddning</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-sm bg-gradient-to-t from-amber-600 to-orange-400 shadow-sm shadow-amber-500/50"></span>
+                        <span class="text-amber-300">Urladdning</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-sm bg-slate-700"></span>
+                        <span class="text-slate-400">Ej vald</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-sm border border-dashed border-amber-400/70 bg-amber-500/10"></span>
+                        <span class="text-amber-300/90">Kommer senare</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Hover Info Box -->
+            <div id="bar-hover-info" class="mb-3 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs font-mono min-h-[42px] transition-all">
+                <div class="flex items-center gap-2 text-slate-300">
+                    <i class="fa-solid fa-hand-pointer text-emerald-400 text-xs"></i>
+                    <span>Peka eller tryck på staplarna för exakt kvartspris & status</span>
+                </div>
+            </div>
+
+            <!-- Bars Container -->
+            <div class="relative pt-6 pb-2">
+                <div id="chart-bars-container" class="h-64 sm:h-72 w-full flex items-end gap-[1px] sm:gap-[2px] px-1 relative">
+                    <!-- Bars dynamically rendered -->
+                </div>
+
+                <!-- X-Axis Markers -->
+                <div id="chart-x-axis" class="flex justify-between text-[10px] sm:text-xs font-mono text-slate-400 mt-3 pt-2 border-t border-slate-800 px-1">
+                    <!-- Dynamic timeline markers -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule & Export Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Slot Cards Lists (7 cols) -->
+            <div class="lg:col-span-7 space-y-6">
+                <!-- Laddningsslotar List -->
+                <div class="bg-cardbg border border-emerald-500/30 rounded-2xl p-5 shadow-xl">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-bolt text-emerald-400"></i> Valda Laddslotar
+                        </h2>
+                        <button id="copy-charge-btn" class="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-darkbg font-semibold text-xs flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-copy"></i> Kopiera laddtider
+                        </button>
+                    </div>
+                    <div id="charge-slots-container" class="space-y-2 my-2">
+                        <!-- Dynamic Charge Slot Cards -->
+                    </div>
+                </div>
+
+                <!-- Urladdningsslotar List -->
+                <div class="bg-cardbg border border-amber-500/30 rounded-2xl p-5 shadow-xl">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-arrow-up-from-bracket text-amber-400"></i> Valda Urladdningsslotar
+                        </h2>
+                        <button id="copy-discharge-btn" class="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-darkbg font-semibold text-xs flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-copy"></i> Kopiera urladdtider
+                        </button>
+                    </div>
+                    <div id="discharge-slots-container" class="space-y-2 my-2">
+                        <!-- Dynamic Discharge Slot Cards -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plaintext Combined Export (5 cols) -->
+            <div class="lg:col-span-5 bg-cardbg border border-cardborder rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-terminal text-cyan-400"></i> Kombinerat Schema
+                        </h2>
+                        <span class="text-[11px] text-slate-400 font-mono">Klartext</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-3">Schema för både laddning och urladdning redo för urklipp.</p>
+
+                    <div class="relative">
+                        <textarea id="schedule-text-area" readonly 
+                                  class="w-full h-64 bg-slate-900/90 border border-slate-800 rounded-xl p-3 text-xs font-mono text-emerald-400 resize-none focus:outline-none focus:border-slate-700"></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-3 flex justify-end">
+                    <button id="copy-all-text-btn" class="w-full py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium rounded-xl transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-clipboard text-cyan-400"></i> Kopiera hela schemat
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Collapsible Full Quarter Table -->
+        <div class="bg-cardbg border border-cardborder rounded-2xl p-5 shadow-xl">
+            <button id="toggle-table-btn" class="w-full flex items-center justify-between text-left text-sm font-bold text-slate-200 hover:text-white transition">
+                <span id="table-toggle-label" class="flex items-center gap-2">
+                    <i class="fa-solid fa-table-cells text-slate-400"></i>
+                    Visa alla periodens kvartspriser i detaljerad tabell
+                </span>
+                <i id="table-arrow" class="fa-solid fa-chevron-down transition-transform duration-200"></i>
+            </button>
+
+            <div id="full-table-wrapper" class="hidden mt-4 pt-4 border-t border-slate-800 overflow-x-auto">
+                <table class="w-full text-left text-xs font-mono">
+                    <thead>
+                        <tr class="text-slate-400 border-b border-slate-800 pb-2">
+                            <th class="py-2 px-3">#</th>
+                            <th class="py-2 px-3">Intervall</th>
+                            <th class="py-2 px-3">Datum</th>
+                            <th class="py-2 px-3 text-right">Spotpris (<span class="vat-unit-text">exkl. moms</span>)</th>
+                            <th class="py-2 px-3 text-center">Status</th>
+                            <th class="py-2 px-3 text-center">Slot</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quarter-table-body" class="divide-y divide-slate-800/50 text-slate-300">
+                        <!-- Dynamic Table Rows -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Toast Alert -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-emerald-500 text-slate-950 font-bold px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 text-sm">
+            <i class="fa-solid fa-circle-check text-base"></i>
+            <span id="toast-message">Kopierat till urklipp!</span>
+        </div>
+    </div>
+
+    <!-- Application JavaScript Logic -->
+    <script>
+        // Global State
+        const STATE = {
+            targetQuartersCharge: 12,      // Default 3 hours charge = 12 quarters
+            maxSlotsCharge: 6,             // Default max 6 charge slots
+            targetQuartersDischarge: 8,    // Default 2 hours discharge = 8 quarters
+            maxSlotsDischarge: 6,          // Default max 6 discharge slots
+            includeVat: false,             // Default exkl. moms
+            startNowAnchor: null,          // Date object if "Starta nu" is active
+            rawToday: null,
+            rawTomorrow: null,
+            dataStatus: 'loading',
+            quarters: [],                  // All quarters timeline
+            selectedChargeIndices: [],    // Chosen charge indices
+            selectedDischargeIndices: [], // Chosen discharge indices
+            chargeSlots: [],               // Grouped charge slots
+            dischargeSlots: []            // Grouped discharge slots
+        };
+
+        // DOM Elements Cache
+        const DOM = {
+            chargeSlider: document.getElementById('charge-slider'),
+            chargeDurationDisplay: document.getElementById('charge-duration-display'),
+            chargeQuarterDisplay: document.getElementById('charge-quarter-display'),
+            chargeSlotLimitBadge: document.getElementById('charge-slot-limit-badge'),
+            
+            dischargeSlider: document.getElementById('discharge-slider'),
+            dischargeDurationDisplay: document.getElementById('discharge-duration-display'),
+            dischargeQuarterDisplay: document.getElementById('discharge-quarter-display'),
+            dischargeSlotLimitBadge: document.getElementById('discharge-slot-limit-badge'),
+
+            installAppBtn: document.getElementById('install-app-btn'),
+            installAppLabel: document.getElementById('install-app-label'),
+            startNowBtn: document.getElementById('start-now-btn'),
+            startNowLabel: document.getElementById('start-now-label'),
+            vatToggleBtn: document.getElementById('vat-toggle-btn'),
+            vatLabel: document.getElementById('vat-label'),
+            refetchBtn: document.getElementById('refetch-btn'),
+            statusDot: document.getElementById('status-dot'),
+            statusText: document.getElementById('status-text'),
+            
+            kpiAvgChargePrice: document.getElementById('kpi-avg-charge-price'),
+            kpiChargeSubtext: document.getElementById('kpi-charge-subtext'),
+            kpiAvgDischargePrice: document.getElementById('kpi-avg-discharge-price'),
+            kpiDischargeSubtext: document.getElementById('kpi-discharge-subtext'),
+            kpiSpreadPrice: document.getElementById('kpi-spread-price'),
+            kpiSpreadSubtext: document.getElementById('kpi-spread-subtext'),
+            kpiChargeSlots: document.getElementById('kpi-charge-slots'),
+            kpiDischargeSlots: document.getElementById('kpi-discharge-slots'),
+            kpiPeriodAvg: document.getElementById('kpi-period-avg'),
+
+            chartHeading: document.getElementById('chart-heading'),
+            chartXAxis: document.getElementById('chart-x-axis'),
+            chartBarsContainer: document.getElementById('chart-bars-container'),
+            barHoverInfo: document.getElementById('bar-hover-info'),
+            
+            chargeSlotsContainer: document.getElementById('charge-slots-container'),
+            dischargeSlotsContainer: document.getElementById('discharge-slots-container'),
+            scheduleTextArea: document.getElementById('schedule-text-area'),
+            
+            copyChargeBtn: document.getElementById('copy-charge-btn'),
+            copyDischargeBtn: document.getElementById('copy-discharge-btn'),
+            copyAllTextBtn: document.getElementById('copy-all-text-btn'),
+            
+            toggleTableBtn: document.getElementById('toggle-table-btn'),
+            tableArrow: document.getElementById('table-arrow'),
+            fullTableWrapper: document.getElementById('full-table-wrapper'),
+            quarterTableBody: document.getElementById('quarter-table-body'),
+            toast: document.getElementById('toast'),
+            toastMessage: document.getElementById('toast-message')
+        };
+
+        // App Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            setupPWA();
+            initEventListeners();
+            loadPriceData();
+        });
+
+        // Setup PWA Manifest & Service Worker
+        let deferredInstallPrompt = null;
+        function setupPWA() {
+            const manifestData = {
+                name: 'SE3 Batteriladdare - Natt & Urladdning',
+                short_name: 'SE3 Batteri',
+                description: 'Optimera laddning (20:00–07:00) och urladdning i SE3',
+                start_url: './',
+                display: 'standalone',
+                background_color: '#0B0F17',
+                theme_color: '#10B981',
+                icons: [{
+                    src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%2310B981'/%3E%3Cpath fill='%230B0F17' d='M108 24L44 106h44l-4 62 64-82h-44z'/%3E%3C/svg%3E",
+                    sizes: "192x192",
+                    type: "image/svg+xml"
+                }]
+            };
+
+            try {
+                const blob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+                document.getElementById('pwa-manifest-link').setAttribute('href', URL.createObjectURL(blob));
+            } catch (err) {
+                console.warn('PWA Manifest fallback:', err);
+            }
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredInstallPrompt = e;
+                DOM.installAppLabel.textContent = 'Installera app';
+            });
+        }
+
+        // Event Bindings
+        function initEventListeners() {
+            if (DOM.installAppBtn) {
+                DOM.installAppBtn.addEventListener('click', async () => {
+                    if (deferredInstallPrompt) {
+                        deferredInstallPrompt.prompt();
+                        const choice = await deferredInstallPrompt.userChoice;
+                        if (choice && choice.outcome === 'accepted') {
+                            showToast('Installerar app...');
+                        }
+                        deferredInstallPrompt = null;
+                    } else {
+                        showToast('Öppna Chrome-menyn (⋮) och välj "Installera app"');
+                    }
+                });
+            }
+
+            // Charge Duration Slider
+            DOM.chargeSlider.addEventListener('input', (e) => {
+                STATE.targetQuartersCharge = parseInt(e.target.value, 10);
+                highlightActiveChargePreset();
+                updateUI();
+            });
+
+            // Charge Presets
+            document.querySelectorAll('.charge-preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const q = parseInt(btn.dataset.quarters, 10);
+                    STATE.targetQuartersCharge = q;
+                    DOM.chargeSlider.value = q;
+                    highlightActiveChargePreset();
+                    updateUI();
+                });
+            });
+
+            // Charge Slot Option Buttons
+            document.querySelectorAll('.charge-slot-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    STATE.maxSlotsCharge = parseInt(btn.dataset.slots, 10);
+                    document.querySelectorAll('.charge-slot-btn').forEach(b => {
+                        b.className = 'charge-slot-btn py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono font-bold text-xs';
+                    });
+                    btn.className = 'charge-slot-btn py-1.5 rounded-lg border-2 border-emerald-500 bg-emerald-500/20 text-emerald-300 font-mono font-bold text-xs';
+                    DOM.chargeSlotLimitBadge.textContent = `Max ${STATE.maxSlotsCharge} slot${STATE.maxSlotsCharge > 1 ? 'ar' : ''}`;
+                    updateUI();
+                });
+            });
+
+            // Discharge Duration Slider
+            DOM.dischargeSlider.addEventListener('input', (e) => {
+                STATE.targetQuartersDischarge = parseInt(e.target.value, 10);
+                highlightActiveDischargePreset();
+                updateUI();
+            });
+
+            // Discharge Presets
+            document.querySelectorAll('.discharge-preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const q = parseInt(btn.dataset.quarters, 10);
+                    STATE.targetQuartersDischarge = q;
+                    DOM.dischargeSlider.value = q;
+                    highlightActiveDischargePreset();
+                    updateUI();
+                });
+            });
+
+            // Discharge Slot Option Buttons
+            document.querySelectorAll('.discharge-slot-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    STATE.maxSlotsDischarge = parseInt(btn.dataset.slots, 10);
+                    document.querySelectorAll('.discharge-slot-btn').forEach(b => {
+                        b.className = 'discharge-slot-btn py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono font-bold text-xs';
+                    });
+                    btn.className = 'discharge-slot-btn py-1.5 rounded-lg border-2 border-amber-500 bg-amber-500/20 text-amber-300 font-mono font-bold text-xs';
+                    DOM.dischargeSlotLimitBadge.textContent = `Max ${STATE.maxSlotsDischarge} slot${STATE.maxSlotsDischarge > 1 ? 'ar' : ''}`;
+                    updateUI();
+                });
+            });
+
+            // Moms Toggle
+            DOM.vatToggleBtn.addEventListener('click', () => {
+                STATE.includeVat = !STATE.includeVat;
+                DOM.vatLabel.textContent = STATE.includeVat ? 'Inkl. moms (+25%)' : 'Exkl. moms';
+                document.querySelectorAll('.vat-unit-text').forEach(el => {
+                    el.textContent = STATE.includeVat ? 'inkl. moms' : 'exkl. moms';
+                });
+                updateUI();
+            });
+
+            // Start From Now Button
+            DOM.startNowBtn.addEventListener('click', () => {
+                if (STATE.startNowAnchor) {
+                    STATE.startNowAnchor = null;
+                    DOM.startNowLabel.textContent = 'Starta nu';
+                    DOM.startNowBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition font-medium text-slate-200';
+                    showToast('Starttid återställd till 20:00');
+                } else {
+                    const now = new Date();
+                    STATE.startNowAnchor = now;
+                    const hh = String(now.getHours()).padStart(2, '0');
+                    const mm = String(Math.floor(now.getMinutes() / 15) * 15).padStart(2, '0');
+                    DOM.startNowLabel.textContent = `Från ${hh}:${mm}`;
+                    DOM.startNowBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 transition font-medium text-cyan-300';
+                    showToast(`Tidslinjen startar från ${hh}:${mm}`);
+                }
+
+                if (STATE.rawToday || STATE.rawTomorrow || STATE.dataStatus === 'simulated') {
+                    const baseDate = STATE.startNowAnchor || new Date();
+                    const nextDay = new Date(baseDate);
+                    nextDay.setDate(nextDay.getDate() + 1);
+                    STATE.quarters = generateAllQuarters(baseDate, nextDay, STATE.rawToday, STATE.rawTomorrow);
+                    updateUI();
+                } else {
+                    loadPriceData();
+                }
+            });
+
+            // Refresh Button
+            DOM.refetchBtn.addEventListener('click', () => {
+                loadPriceData();
+            });
+
+            // Toggle Full Table View
+            DOM.toggleTableBtn.addEventListener('click', () => {
+                const isHidden = DOM.fullTableWrapper.classList.contains('hidden');
+                if (isHidden) {
+                    DOM.fullTableWrapper.classList.remove('hidden');
+                    DOM.tableArrow.style.transform = 'rotate(180deg)';
+                } else {
+                    DOM.fullTableWrapper.classList.add('hidden');
+                    DOM.tableArrow.style.transform = 'rotate(0deg)';
+                }
+            });
+
+            // Copy Schedule Buttons
+            DOM.copyChargeBtn.addEventListener('click', () => copyScheduleText('charge'));
+            DOM.copyDischargeBtn.addEventListener('click', () => copyScheduleText('discharge'));
+            DOM.copyAllTextBtn.addEventListener('click', () => copyScheduleText('all'));
+        }
+
+        // Fetch Price Data from Elprisetjustnu API
+        async function loadPriceData() {
+            updateStatus('loading', 'Hämtar priser för SE3...');
+
+            const anchor = STATE.startNowAnchor || new Date();
+            const today = new Date(anchor);
+            const tomorrow = new Date(anchor);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            const formatDateStr = (d) => {
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return { year, monthDay: `${month}-${day}` };
+            };
+
+            const tStr = formatDateStr(today);
+            const tmStr = formatDateStr(tomorrow);
+
+            const urlToday = `https://www.elprisetjustnu.se/api/v1/prices/${tStr.year}/${tStr.monthDay}_SE3.json`;
+            const urlTomorrow = `https://www.elprisetjustnu.se/api/v1/prices/${tmStr.year}/${tmStr.monthDay}_SE3.json`;
+
+            let rawToday = null;
+            let rawTomorrow = null;
+
+            try {
+                const resToday = await fetch(urlToday);
+                if (resToday.ok) rawToday = await resToday.json();
+            } catch (err) {
+                console.warn("Dagens priser kunde inte hämtas:", err);
+            }
+
+            try {
+                const resTomorrow = await fetch(urlTomorrow);
+                if (resTomorrow.ok) rawTomorrow = await resTomorrow.json();
+            } catch (err) {
+                console.warn("Morgondagens priser är ännu inte publicerade:", err);
+            }
+
+            STATE.rawToday = rawToday;
+            STATE.rawTomorrow = rawTomorrow;
+            STATE.quarters = generateAllQuarters(today, tomorrow, rawToday, rawTomorrow);
+
+            if (rawToday && rawTomorrow) {
+                STATE.dataStatus = 'real';
+                updateStatus('real', 'Reella priser hela dygnet (SE3)');
+            } else if (rawToday) {
+                STATE.dataStatus = 'partial';
+                updateStatus('partial', 'Morgondagens priser kommer senare');
+            } else {
+                STATE.dataStatus = 'simulated';
+                updateStatus('simulated', 'Simulerade priser (API ej nåbart)');
+            }
+
+            updateUI();
+        }
+
+        // Simulated Fallback Price Profile (öre/kWh exkl. moms)
+        function generateSimulatedProfile() {
+            const base = 48.0;
+            const sim = [];
+            for (let i = 0; i < 112; i++) {
+                let factor = 1.0;
+                if (i < 6) factor = 1.25 + Math.sin(i * 0.4) * 0.12;
+                else if (i < 12) factor = 0.95 - (i - 6) * 0.05;
+                else if (i < 20) factor = 0.65 - (i - 12) * 0.02;
+                else if (i < 34) factor = 0.35 + Math.sin((i - 20) * 0.3) * 0.08;
+                else if (i < 44) factor = 0.60 + (i - 34) * 0.05;
+                else if (i < 56) factor = 1.60 + Math.sin((i - 44) * 0.25) * 0.35;
+                else if (i < 76) factor = 1.10 + Math.cos((i - 56) * 0.2) * 0.15;
+                else if (i < 96) factor = 1.85 + Math.sin((i - 76) * 0.22) * 0.45;
+                else factor = 1.15 - (i - 96) * 0.03;
+
+                const val = Math.max(5.0, base * (factor + Math.sin(i * 1.7) * 0.05));
+                sim.push(Math.round(val * 100) / 100);
+            }
+            return sim;
+        }
+
+        // Generate Quarters from Start Time up to 00:00 (Midnight) Next Day
+        function generateAllQuarters(todayDate, tomorrowDate, rawToday, rawTomorrow) {
+            const quarters = [];
+            const simPrices = generateSimulatedProfile();
+            const useNowStart = Boolean(STATE.startNowAnchor);
+
+            const startHour = useNowStart ? todayDate.getHours() : 20;
+            const startMinute = useNowStart ? Math.floor(todayDate.getMinutes() / 15) * 15 : 0;
+            const startTotalMins = startHour * 60 + startMinute;
+
+            const endMidnightMins = 2880;
+            const totalSpanMins = Math.max(15, endMidnightMins - startTotalMins);
+            const totalQuarters = Math.ceil(totalSpanMins / 15);
+
+            for (let idx = 0; idx < totalQuarters; idx++) {
+                const totalOffsetMins = startTotalMins + idx * 15;
+                const dayOffset = Math.floor(totalOffsetMins / 1440);
+                const minsInDay = ((totalOffsetMins % 1440) + 1440) % 1440;
+
+                const hour = Math.floor(minsInDay / 60);
+                const minute = minsInDay % 60;
+
+                const quarterDate = new Date(todayDate);
+                quarterDate.setHours(0, 0, 0, 0);
+                quarterDate.setDate(quarterDate.getDate() + dayOffset);
+
+                const isFirstNightWindow = (minsInDay >= 1200 && dayOffset === 0) || (minsInDay < 420 && dayOffset === 1);
+                const isChargeWindow = isFirstNightWindow;
+
+                let endHour = hour;
+                let endMinute = minute + 15;
+                if (endMinute >= 60) {
+                    endMinute = 0;
+                    endHour = (endHour + 1) % 24;
+                }
+
+                const startStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                const endStr = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
+
+                const rawList = dayOffset === 0 ? rawToday : rawTomorrow;
+                let priceÖreExclVat = null;
+
+                if (rawList && Array.isArray(rawList) && rawList.length > 0) {
+                    const match = rawList.find(item => {
+                        if (!item.time_start) return false;
+                        const d = new Date(item.time_start);
+                        if (d.getHours() === hour) {
+                            return rawList.length >= 80 ? d.getMinutes() === minute : true;
+                        }
+                        return false;
+                    });
+
+                    if (match && match.SEK_per_kWh !== undefined) {
+                        priceÖreExclVat = Math.round(match.SEK_per_kWh * 100 * 100) / 100;
+                    }
+                }
+
+                const isMissingPrice = (priceÖreExclVat === null);
+                if (isMissingPrice) {
+                    priceÖreExclVat = simPrices[idx % simPrices.length];
+                }
+
+                quarters.push({
+                    index: idx,
+                    dateStr: quarterDate.toISOString().split('T')[0],
+                    startTimeStr: startStr,
+                    endTimeStr: endStr,
+                    priceExclVat: priceÖreExclVat,
+                    isChargeWindow,
+                    isMissingPrice
+                });
+            }
+
+            return quarters;
+        }
+
+        // Generic DP Solver: mode = 'min' (Charge) or 'max' (Discharge)
+        function solveOptimalSlotsGeneric(quarterPrices, targetQ, maxK, mode = 'min') {
+            if (targetQ <= 0) return { success: true, chosenIndices: [], totalCost: 0, usedSlots: 0 };
+            
+            const N = quarterPrices.length;
+            if (N < targetQ) return { success: false, chosenIndices: [], totalCost: 0, usedSlots: 0 };
+
+            const isMin = (mode === 'min');
+            const INF = 1e12;
+            const BAD = isMin ? INF : -INF;
+
+            // dp[i][q][k][in_block]
+            const dp = Array.from({ length: N + 1 }, () =>
+                Array.from({ length: targetQ + 1 }, () =>
+                    Array.from({ length: maxK + 1 }, () => [BAD, BAD])
+                )
+            );
+
+            const parent = Array.from({ length: N + 1 }, () =>
+                Array.from({ length: targetQ + 1 }, () =>
+                    Array.from({ length: maxK + 1 }, () => [null, null])
+                )
+            );
+
+            dp[0][0][0][0] = 0;
+
+            const isBetter = (a, b) => isMin ? (a < b) : (a > b);
+
+            for (let i = 0; i < N; i++) {
+                const cost = quarterPrices[i];
+
+                for (let q = 0; q <= targetQ; q++) {
+                    for (let k = 0; k <= maxK; k++) {
+
+                        // Option 1: Do NOT select quarter i
+                        for (let in_b of [0, 1]) {
+                            const val = dp[i][q][k][in_b];
+                            if (val !== BAD) {
+                                if (isBetter(val, dp[i + 1][q][k][0])) {
+                                    dp[i + 1][q][k][0] = val;
+                                    parent[i + 1][q][k][0] = { prev_q: q, prev_k: k, prev_in: in_b, took: false };
+                                }
+                            }
+                        }
+
+                        // Option 2: Select quarter i
+                        if (q < targetQ) {
+                            // Continue block
+                            const valCont = dp[i][q][k][1];
+                            if (valCont !== BAD) {
+                                const newCont = valCont + cost;
+                                if (isBetter(newCont, dp[i + 1][q + 1][k][1])) {
+                                    dp[i + 1][q + 1][k][1] = newCont;
+                                    parent[i + 1][q + 1][k][1] = { prev_q: q, prev_k: k, prev_in: 1, took: true };
+                                }
+                            }
+
+                            // Start new block
+                            if (k < maxK) {
+                                const valNew = dp[i][q][k][0];
+                                if (valNew !== BAD) {
+                                    const newStart = valNew + cost;
+                                    if (isBetter(newStart, dp[i + 1][q + 1][k + 1][1])) {
+                                        dp[i + 1][q + 1][k + 1][1] = newStart;
+                                        parent[i + 1][q + 1][k + 1][1] = { prev_q: q, prev_k: k, prev_in: 0, took: true };
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+
+            let bestVal = BAD;
+            let bestK = -1;
+            let bestIn = -1;
+
+            for (let k = 1; k <= maxK; k++) {
+                for (let in_b of [0, 1]) {
+                    const candidate = dp[N][targetQ][k][in_b];
+                    if (candidate !== BAD && isBetter(candidate, bestVal)) {
+                        bestVal = candidate;
+                        bestK = k;
+                        bestIn = in_b;
+                    }
+                }
+            }
+
+            if (bestVal === BAD) {
+                return { success: false, chosenIndices: [], totalCost: 0, usedSlots: 0 };
+            }
+
+            const selected = [];
+            let currI = N;
+            let currQ = targetQ;
+            let currK = bestK;
+            let currIn = bestIn;
+
+            while (currI > 0) {
+                const p = parent[currI][currQ][currK][currIn];
+                if (!p) break;
+                if (p.took) selected.push(currI - 1);
+                currQ = p.prev_q;
+                currK = p.prev_k;
+                currIn = p.prev_in;
+                currI--;
+            }
+
+            selected.reverse();
+
+            return {
+                success: true,
+                chosenIndices: selected,
+                totalCost: bestVal,
+                usedSlots: bestK
+            };
+        }
+
+        // Group indices into slot objects
+        function groupIndicesToSlots(chosenIndices, quartersData, includeVat) {
+            if (!chosenIndices || chosenIndices.length === 0) return [];
+
+            const slotBlocks = [];
+            let currentBlock = [chosenIndices[0]];
+
+            for (let i = 1; i < chosenIndices.length; i++) {
+                if (chosenIndices[i] === chosenIndices[i - 1] + 1) {
+                    currentBlock.push(chosenIndices[i]);
+                } else {
+                    slotBlocks.push(currentBlock);
+                    currentBlock = [chosenIndices[i]];
+                }
+            }
+            slotBlocks.push(currentBlock);
+
+            return slotBlocks.map((block, idx) => {
+                const startQuarter = quartersData[block[0]];
+                const endQuarter = quartersData[block[block.length - 1]];
+
+                const totalPrice = block.reduce((sum, qIdx) => {
+                    const price = quartersData[qIdx].priceExclVat * (includeVat ? 1.25 : 1.0);
+                    return sum + price;
+                }, 0);
+
+                const avgPrice = totalPrice / block.length;
+                const durationMinutes = block.length * 15;
+
+                return {
+                    slotNumber: idx + 1,
+                    startTime: startQuarter.startTimeStr,
+                    endTime: endQuarter.endTimeStr,
+                    durationMinutes,
+                    quarterCount: block.length,
+                    avgPrice,
+                    indices: block
+                };
+            });
+        }
+
+        // Main Interface Update
+        function updateUI() {
+            if (!STATE.quarters || STATE.quarters.length === 0) return;
+
+            const vatMultiplier = STATE.includeVat ? 1.25 : 1.0;
+            const allPrices = STATE.quarters.map(q => q.priceExclVat * vatMultiplier);
+            
+            // --- 1. CHARGING OPTIMIZATION (Min cost in 20:00-07:00 window) ---
+            const eligibleChargeIndices = [];
+            const eligibleChargePrices = [];
+            STATE.quarters.forEach((q, idx) => {
+                if (q.isChargeWindow) {
+                    eligibleChargeIndices.push(idx);
+                    eligibleChargePrices.push(allPrices[idx]);
+                }
+            });
+
+            const targetQCharge = Math.min(STATE.targetQuartersCharge, eligibleChargePrices.length);
+            const dpChargeResult = solveOptimalSlotsGeneric(eligibleChargePrices, targetQCharge, STATE.maxSlotsCharge, 'min');
+            
+            STATE.selectedChargeIndices = dpChargeResult.success
+                ? dpChargeResult.chosenIndices.map(localIdx => eligibleChargeIndices[localIdx])
+                : [];
+            STATE.chargeSlots = groupIndicesToSlots(STATE.selectedChargeIndices, STATE.quarters, STATE.includeVat);
+
+            // --- 2. DISCHARGING OPTIMIZATION (Max revenue in full timeline, excluding charge quarters & missing prices) ---
+            const chargeSet = new Set(STATE.selectedChargeIndices);
+            const eligibleDischargeIndices = [];
+            const eligibleDischargePrices = [];
+
+            STATE.quarters.forEach((q, idx) => {
+                // Cannot discharge when charging, or when price is missing
+                if (!chargeSet.has(idx) && !q.isMissingPrice) {
+                    eligibleDischargeIndices.push(idx);
+                    eligibleDischargePrices.push(allPrices[idx]);
+                }
+            });
+
+            const targetQDischarge = Math.min(STATE.targetQuartersDischarge, eligibleDischargePrices.length);
+            const dpDischargeResult = solveOptimalSlotsGeneric(eligibleDischargePrices, targetQDischarge, STATE.maxSlotsDischarge, 'max');
+
+            STATE.selectedDischargeIndices = dpDischargeResult.success
+                ? dpDischargeResult.chosenIndices.map(localIdx => eligibleDischargeIndices[localIdx])
+                : [];
+            STATE.dischargeSlots = groupIndicesToSlots(STATE.selectedDischargeIndices, STATE.quarters, STATE.includeVat);
+
+            // Update Labels
+            const chHours = Math.floor((STATE.targetQuartersCharge * 15) / 60);
+            const chMins = (STATE.targetQuartersCharge * 15) % 60;
+            DOM.chargeDurationDisplay.textContent = chHours > 0 ? `${chHours} tim ${chMins > 0 ? chMins + ' min' : ''}` : `${chMins} min`;
+            DOM.chargeQuarterDisplay.textContent = `(${STATE.targetQuartersCharge} kvartar)`;
+
+            const disHours = Math.floor((STATE.targetQuartersDischarge * 15) / 60);
+            const disMins = (STATE.targetQuartersDischarge * 15) % 60;
+            DOM.dischargeDurationDisplay.textContent = STATE.targetQuartersDischarge === 0 ? 'Avstängd (0 min)' : (disHours > 0 ? `${disHours} tim ${disMins > 0 ? disMins + ' min' : ''}` : `${disMins} min`);
+            DOM.dischargeQuarterDisplay.textContent = `(${STATE.targetQuartersDischarge} kvartar)`;
+
+            // Update KPIs
+            let avgChargePrice = 0;
+            if (STATE.selectedChargeIndices.length > 0) {
+                const totalCharge = STATE.selectedChargeIndices.reduce((s, idx) => s + allPrices[idx], 0);
+                avgChargePrice = totalCharge / STATE.selectedChargeIndices.length;
+            }
+
+            let avgDischargePrice = 0;
+            if (STATE.selectedDischargeIndices.length > 0) {
+                const totalDischarge = STATE.selectedDischargeIndices.reduce((s, idx) => s + allPrices[idx], 0);
+                avgDischargePrice = totalDischarge / STATE.selectedDischargeIndices.length;
+            }
+
+            const periodAvgPrice = allPrices.reduce((a, b) => a + b, 0) / allPrices.length;
+            const spread = avgDischargePrice > 0 && avgChargePrice > 0 ? (avgDischargePrice - avgChargePrice) : 0;
+
+            DOM.kpiAvgChargePrice.innerHTML = `${avgChargePrice.toFixed(1).replace('.', ',')} <span class="text-xs text-emerald-500 font-normal">öre/kWh</span>`;
+            DOM.kpiChargeSubtext.textContent = `${STATE.selectedChargeIndices.length} kvartar valda`;
+
+            DOM.kpiAvgDischargePrice.innerHTML = `${avgDischargePrice.toFixed(1).replace('.', ',')} <span class="text-xs text-amber-500 font-normal">öre/kWh</span>`;
+            DOM.kpiDischargeSubtext.textContent = `${STATE.selectedDischargeIndices.length} kvartar valda`;
+
+            DOM.kpiSpreadPrice.innerHTML = `${spread >= 0 ? '+' : ''}${spread.toFixed(1).replace('.', ',')} <span class="text-xs text-cyan-500 font-normal">öre/kWh</span>`;
+            DOM.kpiSpreadSubtext.textContent = spread > 0 ? `Vinstmarginal vs laddning` : `Ingen urladdning vald`;
+
+            DOM.kpiChargeSlots.textContent = STATE.chargeSlots.length;
+            DOM.kpiDischargeSlots.textContent = STATE.dischargeSlots.length;
+            DOM.kpiPeriodAvg.textContent = `Hela periodens snitt: ${periodAvgPrice.toFixed(1).replace('.', ',')} öre`;
+
+            // Render Charts and Tables
+            renderXAxis();
+            renderBarChart(allPrices);
+            renderSlotLists();
+            renderScheduleText();
+            renderFullTable(allPrices);
+        }
+
+        // Render X Axis Markers
+        function renderXAxis() {
+            const totalQ = STATE.quarters.length;
+            const axisIndices = [
+                0,
+                Math.round(totalQ * 0.18),
+                Math.round(totalQ * 0.36),
+                Math.round(totalQ * 0.54),
+                Math.round(totalQ * 0.72),
+                Math.round(totalQ * 0.88),
+                totalQ - 1
+            ];
+            DOM.chartXAxis.innerHTML = axisIndices.map((qIdx, i) => {
+                const q = STATE.quarters[qIdx] || STATE.quarters[0];
+                const isEnd = i === axisIndices.length - 1;
+                const label = isEnd ? '00:00' : q.startTimeStr;
+                const cls = (i === 0) ? 'text-cyan-400 font-bold' : (isEnd ? 'text-amber-300 font-bold' : '');
+                return `<span class="${cls}">${label}</span>`;
+            }).join('');
+        }
+
+        // Render Bar Chart
+        function renderBarChart(prices) {
+            const maxPrice = Math.max(...prices, 10);
+            DOM.chartBarsContainer.innerHTML = '';
+
+            const chargeSet = new Set(STATE.selectedChargeIndices);
+            const dischargeSet = new Set(STATE.selectedDischargeIndices);
+
+            const chargeSlotMap = {};
+            STATE.chargeSlots.forEach(s => s.indices.forEach(idx => chargeSlotMap[idx] = s.slotNumber));
+
+            const dischargeSlotMap = {};
+            STATE.dischargeSlots.forEach(s => s.indices.forEach(idx => dischargeSlotMap[idx] = s.slotNumber));
+
+            prices.forEach((price, idx) => {
+                const quarter = STATE.quarters[idx];
+                const isCharge = chargeSet.has(idx);
+                const isDischarge = dischargeSet.has(idx);
+                const isWindow = quarter.isChargeWindow;
+                const heightPct = Math.max(10, Math.round((price / maxPrice) * 100));
+
+                const barWrapper = document.createElement('div');
+                const nextQuarter = STATE.quarters[idx + 1];
+                const isWindowBoundary = isWindow && nextQuarter && !nextQuarter.isChargeWindow;
+                const borderDivider = isWindowBoundary ? 'border-r border-dashed border-cyan-500/60 pr-[1px] mr-[1px]' : '';
+                barWrapper.className = `flex-1 h-full flex flex-col justify-end items-center group relative cursor-pointer ${borderDivider}`;
+
+                let barClass = 'w-full rounded-t-[2px] transition-all duration-150 ';
+                if (isCharge) {
+                    barClass += 'bg-gradient-to-t from-emerald-600 to-teal-400 shadow-md shadow-emerald-500/30 group-hover:from-emerald-500 group-hover:to-teal-300';
+                } else if (isDischarge) {
+                    barClass += 'bg-gradient-to-t from-amber-600 to-orange-400 shadow-md shadow-amber-500/30 group-hover:from-amber-500 group-hover:to-orange-300';
+                } else if (quarter.isMissingPrice) {
+                    barClass += 'bg-amber-500/15 border-t border-dashed border-amber-400/70 group-hover:bg-amber-500/25';
+                } else if (isWindow) {
+                    barClass += 'bg-slate-600/80 group-hover:bg-slate-500';
+                } else {
+                    barClass += 'bg-slate-800/60 group-hover:bg-slate-700/80';
+                }
+
+                barWrapper.innerHTML = `<div class="${barClass}" style="height: ${heightPct}%;"></div>`;
+
+                const handleHover = () => {
+                    let statusTag = '';
+                    if (isCharge) {
+                        statusTag = `<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">Laddning Slot #${chargeSlotMap[idx]}</span>`;
+                    } else if (isDischarge) {
+                        statusTag = `<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/30 font-bold">Urladdning Slot #${dischargeSlotMap[idx]}</span>`;
+                    } else if (quarter.isMissingPrice) {
+                        statusTag = `<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/30 font-semibold">Kommer senare</span>`;
+                    } else if (isWindow) {
+                        statusTag = `<span class="px-2 py-0.5 rounded bg-slate-700 text-slate-300 border border-slate-600">Nattfönster (Ej vald)</span>`;
+                    } else {
+                        statusTag = `<span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-500 border border-slate-800">Ej vald</span>`;
+                    }
+
+                    const vatTag = STATE.includeVat ? 'inkl. moms' : 'exkl. moms';
+                    const priceText = quarter.isMissingPrice
+                        ? `<span class="text-amber-300">Kommer senare</span> <span class="text-slate-500 font-normal">(~${price.toFixed(1).replace('.', ',')} öre)</span>`
+                        : `${price.toFixed(1).replace('.', ',')} <span class="text-slate-400 font-normal">öre/kWh (${vatTag})</span>`;
+
+                    DOM.barHoverInfo.innerHTML = `
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="text-slate-400 text-[11px]">${quarter.dateStr}</span>
+                            <span class="text-white font-bold">${quarter.startTimeStr} – ${quarter.endTimeStr}</span>
+                            ${statusTag}
+                        </div>
+                        <div class="${isCharge ? 'text-emerald-400' : (isDischarge ? 'text-amber-400' : 'text-slate-200')} font-bold">
+                            ${priceText}
+                        </div>
+                    `;
+                };
+
+                barWrapper.addEventListener('mouseenter', handleHover);
+                barWrapper.addEventListener('click', handleHover);
+
+                DOM.chartBarsContainer.appendChild(barWrapper);
+            });
+        }
+
+        // Highlight Active Presets
+        function highlightActiveChargePreset() {
+            document.querySelectorAll('.charge-preset-btn').forEach(btn => {
+                const q = parseInt(btn.dataset.quarters, 10);
+                if (q === STATE.targetQuartersCharge) {
+                    btn.className = 'charge-preset-btn px-2 py-1 text-xs rounded-md bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono font-semibold';
+                } else {
+                    btn.className = 'charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono';
+                }
+            });
+        }
+
+        function highlightActiveDischargePreset() {
+            document.querySelectorAll('.discharge-preset-btn').forEach(btn => {
+                const q = parseInt(btn.dataset.quarters, 10);
+                if (q === STATE.targetQuartersDischarge) {
+                    btn.className = 'discharge-preset-btn px-2 py-1 text-xs rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono font-semibold';
+                } else {
+                    btn.className = 'discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono';
+                }
+            });
+        }
+
+        // Render Slot Lists
+        function renderSlotLists() {
+            // Charge Slot Cards
+            DOM.chargeSlotsContainer.innerHTML = '';
+            if (!STATE.chargeSlots || STATE.chargeSlots.length === 0) {
+                DOM.chargeSlotsContainer.innerHTML = `<div class="text-center py-4 text-slate-500 text-xs font-mono">Inga laddslotar valda.</div>`;
+            } else {
+                STATE.chargeSlots.forEach(slot => {
+                    const h = Math.floor(slot.durationMinutes / 60);
+                    const m = slot.durationMinutes % 60;
+                    const durText = h > 0 ? `${h}t ${m > 0 ? m + 'm' : ''}` : `${m}m`;
+
+                    const div = document.createElement('div');
+                    div.className = 'p-3 rounded-xl bg-slate-900/90 border border-emerald-500/30 flex items-center justify-between text-xs font-mono';
+                    div.innerHTML = `
+                        <div class="flex items-center space-x-2.5">
+                            <span class="w-6 h-6 rounded bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center">#${slot.slotNumber}</span>
+                            <div>
+                                <span class="font-bold text-white">${slot.startTime} – ${slot.endTime}</span>
+                                <span class="text-slate-400 ml-2">(${durText})</span>
+                            </div>
+                        </div>
+                        <div class="font-bold text-emerald-400">
+                            ${slot.avgPrice.toFixed(1).replace('.', ',')} öre/kWh
+                        </div>
+                    `;
+                    DOM.chargeSlotsContainer.appendChild(div);
+                });
+            }
+
+            // Discharge Slot Cards
+            DOM.dischargeSlotsContainer.innerHTML = '';
+            if (!STATE.dischargeSlots || STATE.dischargeSlots.length === 0) {
+                DOM.dischargeSlotsContainer.innerHTML = `<div class="text-center py-4 text-slate-500 text-xs font-mono">Inga urladdningsslotar valda.</div>`;
+            } else {
+                STATE.dischargeSlots.forEach(slot => {
+                    const h = Math.floor(slot.durationMinutes / 60);
+                    const m = slot.durationMinutes % 60;
+                    const durText = h > 0 ? `${h}t ${m > 0 ? m + 'm' : ''}` : `${m}m`;
+
+                    const div = document.createElement('div');
+                    div.className = 'p-3 rounded-xl bg-slate-900/90 border border-amber-500/30 flex items-center justify-between text-xs font-mono';
+                    div.innerHTML = `
+                        <div class="flex items-center space-x-2.5">
+                            <span class="w-6 h-6 rounded bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center">#${slot.slotNumber}</span>
+                            <div>
+                                <span class="font-bold text-white">${slot.startTime} – ${slot.endTime}</span>
+                                <span class="text-slate-400 ml-2">(${durText})</span>
+                            </div>
+                        </div>
+                        <div class="font-bold text-amber-400">
+                            ${slot.avgPrice.toFixed(1).replace('.', ',')} öre/kWh
+                        </div>
+                    `;
+                    DOM.dischargeSlotsContainer.appendChild(div);
+                });
+            }
+        }
+
+        // Format Combined Plaintext Schedule
+        function renderScheduleText() {
+            const vatLabel = STATE.includeVat ? "inkl. moms" : "exkl. moms";
+            let text = `=== SE3 BATTERISCHEMA (${vatLabel}) ===\n\n`;
+
+            text += `--- LADDNING (${DOM.chargeDurationDisplay.textContent}) ---\n`;
+            if (STATE.chargeSlots.length === 0) {
+                text += `Ingen laddning vald.\n`;
+            } else {
+                STATE.chargeSlots.forEach(s => {
+                    const h = Math.floor(s.durationMinutes / 60);
+                    const m = s.durationMinutes % 60;
+                    const durStr = h > 0 ? `${h}t ${m > 0 ? m + 'm' : ''}` : `${m}m`;
+                    text += `Slot ${s.slotNumber}: ${s.startTime} - ${s.endTime} (${durStr}) | Snitt: ${s.avgPrice.toFixed(1).replace('.', ',')} öre\n`;
+                });
+                text += `Växelriktarformat laddning:\n${STATE.chargeSlots.map(s => `${s.startTime}-${s.endTime}`).join(', ')}\n`;
+            }
+
+            text += `\n--- URLADDNING (${DOM.dischargeDurationDisplay.textContent}) ---\n`;
+            if (STATE.dischargeSlots.length === 0) {
+                text += `Ingen urladdning vald.\n`;
+            } else {
+                STATE.dischargeSlots.forEach(s => {
+                    const h = Math.floor(s.durationMinutes / 60);
+                    const m = s.durationMinutes % 60;
+                    const durStr = h > 0 ? `${h}t ${m > 0 ? m + 'm' : ''}` : `${m}m`;
+                    text += `Slot ${s.slotNumber}: ${s.startTime} - ${s.endTime} (${durStr}) | Snitt: ${s.avgPrice.toFixed(1).replace('.', ',')} öre\n`;
+                });
+                text += `Växelriktarformat urladdning:\n${STATE.dischargeSlots.map(s => `${s.startTime}-${s.endTime}`).join(', ')}\n`;
+            }
+
+            DOM.scheduleTextArea.value = text;
+        }
+
+        // Render Collapsible Table
+        function renderFullTable(prices) {
+            DOM.quarterTableBody.innerHTML = '';
+            const chargeSet = new Set(STATE.selectedChargeIndices);
+            const dischargeSet = new Set(STATE.selectedDischargeIndices);
+
+            const chargeSlotMap = {};
+            STATE.chargeSlots.forEach(s => s.indices.forEach(idx => chargeSlotMap[idx] = s.slotNumber));
+
+            const dischargeSlotMap = {};
+            STATE.dischargeSlots.forEach(s => s.indices.forEach(idx => dischargeSlotMap[idx] = s.slotNumber));
+
+            STATE.quarters.forEach((q, idx) => {
+                const isCharge = chargeSet.has(idx);
+                const isDischarge = dischargeSet.has(idx);
+                const price = prices[idx];
+
+                const tr = document.createElement('tr');
+                if (isCharge) tr.className = 'bg-emerald-950/20 font-semibold';
+                else if (isDischarge) tr.className = 'bg-amber-950/20 font-semibold';
+                else tr.className = 'hover:bg-slate-800/40';
+
+                let statusBadge = '<span class="text-slate-500 text-[10px]">Ej vald</span>';
+                let slotText = '-';
+
+                if (isCharge) {
+                    statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">LADDNING</span>';
+                    slotText = `<span class="text-emerald-400 font-bold">Ladd #${chargeSlotMap[idx]}</span>`;
+                } else if (isDischarge) {
+                    statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-400/30 font-bold">URLADDNING</span>';
+                    slotText = `<span class="text-amber-400 font-bold">Ur #${dischargeSlotMap[idx]}</span>`;
+                } else if (q.isMissingPrice) {
+                    statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] bg-amber-500/15 text-amber-300 border border-amber-400/30">Kommer senare</span>';
+                } else if (q.isChargeWindow) {
+                    statusBadge = '<span class="text-slate-400 text-[10px]">Nattfönster</span>';
+                }
+
+                const priceCellHtml = q.isMissingPrice
+                    ? `<span class="text-amber-300/90">Kommer senare</span> <span class="text-slate-500 font-normal text-[11px]">(~${price.toFixed(1).replace('.', ',')})</span>`
+                    : `${price.toFixed(1).replace('.', ',')} öre`;
+
+                tr.innerHTML = `
+                    <td class="py-2 px-3 text-slate-400">${idx + 1}</td>
+                    <td class="py-2 px-3 font-bold text-white">${q.startTimeStr} – ${q.endTimeStr}</td>
+                    <td class="py-2 px-3 text-slate-400">${q.dateStr}</td>
+                    <td class="py-2 px-3 text-right font-bold ${isCharge ? 'text-emerald-400' : (isDischarge ? 'text-amber-400' : 'text-slate-300')}">
+                        ${priceCellHtml}
+                    </td>
+                    <td class="py-2 px-3 text-center">${statusBadge}</td>
+                    <td class="py-2 px-3 text-center text-slate-400">${slotText}</td>
+                `;
+
+                DOM.quarterTableBody.appendChild(tr);
+            });
+        }
+
+        // Status Helper
+        function updateStatus(type, text) {
+            DOM.statusText.textContent = text;
+            if (type === 'loading') {
+                DOM.statusDot.className = 'w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse';
+            } else if (type === 'real') {
+                DOM.statusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400';
+            } else if (type === 'partial') {
+                DOM.statusDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400';
+            } else {
+                DOM.statusDot.className = 'w-2.5 h-2.5 rounded-full bg-orange-500';
+            }
+        }
+
+        // Copy Schedule Helpers
+        function copyScheduleText(mode) {
+            let textToCopy = "";
+            const vatLabel = STATE.includeVat ? "inkl. moms" : "exkl. moms";
+
+            if (mode === 'charge') {
+                textToCopy = `=== SE3 LADDNINGSSCHEMA (${vatLabel}) ===\n`;
+                textToCopy += STATE.chargeSlots.map(s => `Slot ${s.slotNumber}: ${s.startTime}-${s.endTime} (${s.avgPrice.toFixed(1)} öre)`).join('\n');
+                textToCopy += `\nVäxelriktarformat:\n` + STATE.chargeSlots.map(s => `${s.startTime}-${s.endTime}`).join(', ');
+            } else if (mode === 'discharge') {
+                textToCopy = `=== SE3 URLADDNINGSSCHEMA (${vatLabel}) ===\n`;
+                textToCopy += STATE.dischargeSlots.map(s => `Slot ${s.slotNumber}: ${s.startTime}-${s.endTime} (${s.avgPrice.toFixed(1)} öre)`).join('\n');
+                textToCopy += `\nVäxelriktarformat:\n` + STATE.dischargeSlots.map(s => `${s.startTime}-${s.endTime}`).join(', ');
+            } else {
+                textToCopy = DOM.scheduleTextArea.value;
+            }
+
+            if (!textToCopy) return;
+
+            const textArea = document.createElement("textarea");
+            textArea.value = textToCopy;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            textArea.style.top = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                document.execCommand('copy');
+                showToast("Kopierat till urklipp!");
+            } catch (err) {
+                showToast("Kunde inte kopiera automatiskt");
+            } finally {
+                document.body.removeChild(textArea);
+            }
+        }
+
+        // Toast Helper
+        function showToast(msg) {
+            DOM.toastMessage.textContent = msg;
+            DOM.toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+            DOM.toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                DOM.toast.classList.remove('translate-y-0', 'opacity-100');
+                DOM.toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
