@@ -125,11 +125,19 @@
                     <span id="start-now-label">Starta nu</span>
                 </button>
 
+
                 <!-- Moms Toggle -->
                 <button id="vat-toggle-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition font-medium text-slate-200">
                     <i class="fa-solid fa-percent text-emerald-400 text-xs"></i>
                     <span id="vat-label">Exkl. moms</span>
                 </button>
+
+                <!-- Tibber Token Button -->
+                <button id="tibber-token-btn" title="Anslut till Tibbers GraphQL API med Bearer-token" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition font-medium text-slate-200">
+                    <i class="fa-solid fa-bolt text-cyan-400 text-xs"></i>
+                    <span id="tibber-token-label">Tibber</span>
+                </button>
+
 
                 <!-- Refresh Button -->
                 <button id="refetch-btn" title="Hämta om prisdata nu" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition">
@@ -159,6 +167,31 @@
                 </span>
             </div>
         </div>
+
+        <!-- Tibber API Token Panel (Hidden by default) -->
+        <div id="tibber-token-panel" class="hidden bg-cardbg border border-cyan-500/30 rounded-2xl p-4 shadow-lg">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-xs font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-bolt"></i> Tibber GraphQL API (api.tibber.com/v1-beta/gql)
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                        Klistra in din Tibber API-token (från <code class="text-slate-300">developer.tibber.com</code>). Appen hämtar <code class="text-slate-300">today</code> och <code class="text-slate-300">tomorrow</code> (<code class="text-slate-300">total</code> / <code class="text-slate-300">energy</code> i SEK/kWh) och prioriterar Tibber när token finns.
+                    </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <input id="tibber-token-input" type="password" placeholder="Klistra in Tibber API-token..."
+                           class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-slate-100 focus:outline-none focus:border-cyan-400 w-56">
+                    <button id="tibber-token-save-btn" class="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition">
+                        Spara & Hämta
+                    </button>
+                    <button id="tibber-token-clear-btn" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs transition">
+                        Rensa
+                    </button>
+                </div>
+            </div>
+        </div>
+
 
         <!-- Controls Section: Charging & Discharging -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -361,6 +394,10 @@
                         <span class="text-amber-300">Framtida Urladdning</span>
                     </div>
                     <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-sm bg-indigo-500/25 border border-indigo-400/50"></span>
+                        <span class="text-indigo-300">Nattfönster (20–07)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
                         <span class="w-3 h-3 rounded-sm bg-slate-700"></span>
                         <span class="text-slate-400">Ej vald</span>
                     </div>
@@ -368,10 +405,21 @@
                         <span class="w-3 h-3 rounded-sm bg-slate-900 border border-slate-700 opacity-60"></span>
                         <span class="text-slate-500">Passerad tid</span>
                     </div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-3 h-3 rounded-sm border border-dashed border-amber-400/70 bg-amber-500/10"></span>
-                        <span class="text-amber-300/90">Kommer senare</span>
-                    </div>
+                </div>
+            </div>
+
+            <!-- Selected Quarter Price & Source Indicator -->
+            <div id="selected-quarter-indicator" class="mb-3 p-3 rounded-xl bg-slate-900/95 border border-cyan-500/30 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <span class="px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold">VALD TIDPUNKT</span>
+                    <span id="sel-q-time" class="text-white font-bold">--:-- – --:--</span>
+                    <span id="sel-q-date" class="text-slate-400 text-[11px]">----/--/--</span>
+                    <span id="sel-q-status" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-[11px]">-</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <span id="sel-q-price" class="text-sm sm:text-base font-bold text-emerald-400">--,-- öre/kWh</span>
+                    <span id="sel-q-source" class="px-2 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700 text-[11px]">Källa: --</span>
+                    <span id="sel-q-updated" class="text-slate-500 text-[11px]">Hämtad: --:--:--</span>
                 </div>
             </div>
 
@@ -509,6 +557,10 @@
             startNowAnchor: null,          // Date object if "Starta nu" is active
             rawToday: null,
             rawTomorrow: null,
+            activeSource: 'Simulerad',
+            tibberToken: ((localStorage.getItem('se3_tibber_token') || 't_s00ZLvIXpLoYT3iAHy8AdelpuNj3u6d-2XrHg9azU')).trim(),
+            fetchedAt: null,
+            selectedQuarterIndex: null,
             dataStatus: 'loading',
             quarters: [],                  // All quarters timeline
             selectedChargeIndices: [],    // Chosen charge indices
@@ -582,6 +634,18 @@
             loadPriceData();
         });
 
+        let lastAutoRefreshAt = 0;
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                const nowMs = Date.now();
+                if (nowMs - lastAutoRefreshAt > 15000) {
+                    lastAutoRefreshAt = nowMs;
+                    updateNext1315Target();
+                    loadPriceData();
+                }
+            }
+        });
+
         // Setup PWA Manifest & Service Worker
         let deferredInstallPrompt = null;
         function setupPWA() {
@@ -605,6 +669,46 @@
                 document.getElementById('pwa-manifest-link').setAttribute('href', URL.createObjectURL(blob));
             } catch (err) {
                 console.warn('PWA Manifest fallback:', err);
+            }
+
+            if ('serviceWorker' in navigator) {
+                const swCode = `
+                    const CACHE_NAME = 'se3-battery-nocache-v20';
+                    self.addEventListener('install', () => self.skipWaiting());
+                    self.addEventListener('activate', (event) => {
+                        event.waitUntil(
+                            caches.keys()
+                                .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
+                                .then(() => self.clients.claim())
+                        );
+                    });
+                    self.addEventListener('fetch', (event) => {
+                        const req = event.request;
+                        if (req.url.includes('elprisetjustnu.se')) {
+                            event.respondWith(fetch(req, { cache: 'no-store' }));
+                            return;
+                        }
+                        if (req.method === 'GET' && req.url.startsWith(self.location.origin)) {
+                            event.respondWith(
+                                fetch(req, { cache: 'no-store' })
+                                    .then((res) => {
+                                        const copy = res.clone();
+                                        caches.open(CACHE_NAME).then((c) => c.put(req, copy)).catch(() => {});
+                                        return res;
+                                    })
+                                    .catch(() => caches.match(req))
+                            );
+                        }
+                    });
+                `;
+                try {
+                    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                    navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch((err) => {
+                        console.warn('Service Worker registrering misslyckades:', err);
+                    });
+                } catch (err) {
+                    console.warn('Service Worker fallback:', err);
+                }
             }
 
             window.addEventListener('beforeinstallprompt', (e) => {
@@ -768,15 +872,66 @@
                 }
 
                 if (STATE.rawToday || STATE.rawTomorrow || STATE.dataStatus === 'simulated') {
-                    const baseDate = STATE.startNowAnchor || new Date();
-                    const nextDay = new Date(baseDate);
-                    nextDay.setDate(nextDay.getDate() + 1);
-                    STATE.quarters = generateAllQuarters(baseDate, nextDay, STATE.rawToday, STATE.rawTomorrow);
+                    const nowRef = new Date();
+                    const todayMid = new Date(nowRef.getFullYear(), nowRef.getMonth(), nowRef.getDate(), 0, 0, 0, 0);
+                    const tomorrowMid = new Date(todayMid.getTime() + 24 * 3600 * 1000);
+                    STATE.quarters = generateAllQuarters(todayMid, tomorrowMid, STATE.rawToday, STATE.rawTomorrow);
                     updateUI();
                 } else {
                     loadPriceData();
                 }
             });
+
+            // Tibber Token Panel Listeners
+            const tibberBtn = document.getElementById('tibber-token-btn');
+            const tibberPanel = document.getElementById('tibber-token-panel');
+            const tibberInput = document.getElementById('tibber-token-input');
+            const tibberSaveBtn = document.getElementById('tibber-token-save-btn');
+            const tibberClearBtn = document.getElementById('tibber-token-clear-btn');
+            const tibberLabel = document.getElementById('tibber-token-label');
+
+            const syncTibberBadge = () => {
+                if (!tibberLabel || !tibberBtn) return;
+                if (STATE.tibberToken) {
+                    tibberLabel.textContent = 'Tibber ✓';
+                    tibberBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 transition font-semibold text-cyan-300';
+                } else {
+                    tibberLabel.textContent = 'Tibber';
+                    tibberBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition font-medium text-slate-200';
+                }
+            };
+            syncTibberBadge();
+
+            if (tibberBtn && tibberPanel && tibberInput) {
+                tibberBtn.addEventListener('click', () => {
+                    tibberInput.value = STATE.tibberToken || '';
+                    tibberPanel.classList.toggle('hidden');
+                    if (!tibberPanel.classList.contains('hidden')) tibberInput.focus();
+                });
+            }
+            if (tibberSaveBtn && tibberInput) {
+                tibberSaveBtn.addEventListener('click', () => {
+                    const val = (tibberInput.value || '').trim();
+                    STATE.tibberToken = val;
+                    if (val) localStorage.setItem('se3_tibber_token', val);
+                    else localStorage.removeItem('se3_tibber_token');
+                    syncTibberBadge();
+                    tibberPanel.classList.add('hidden');
+                    showToast(val ? 'Tibber token sparad — hämtar priser från Tibber...' : 'Tibber token borttagen — hämtar priser...');
+                    loadPriceData();
+                });
+            }
+            if (tibberClearBtn && tibberInput) {
+                tibberClearBtn.addEventListener('click', () => {
+                    tibberInput.value = '';
+                    STATE.tibberToken = '';
+                    localStorage.removeItem('se3_tibber_token');
+                    syncTibberBadge();
+                    showToast('Tibber token rensad');
+                    loadPriceData();
+                });
+            }
+
 
             // Refresh Button
             DOM.refetchBtn.addEventListener('click', () => {
@@ -806,10 +961,9 @@
         async function loadPriceData() {
             updateStatus('loading', 'Hämtar priser för SE3...');
 
-            const anchor = STATE.startNowAnchor || new Date();
-            const today = new Date(anchor);
-            const tomorrow = new Date(anchor);
-            tomorrow.setDate(tomorrow.getDate() + 1);
+            const realNowForFetch = new Date();
+            const today = new Date(realNowForFetch.getFullYear(), realNowForFetch.getMonth(), realNowForFetch.getDate(), 0, 0, 0, 0);
+            const tomorrow = new Date(today.getTime() + 24 * 3600 * 1000);
 
             const formatDateStr = (d) => {
                 const year = d.getFullYear();
@@ -821,38 +975,206 @@
             const tStr = formatDateStr(today);
             const tmStr = formatDateStr(tomorrow);
 
-            const urlToday = `https://www.elprisetjustnu.se/api/v1/prices/${tStr.year}/${tStr.monthDay}_SE3.json`;
-            const urlTomorrow = `https://www.elprisetjustnu.se/api/v1/prices/${tmStr.year}/${tmStr.monthDay}_SE3.json`;
+            const cacheBust = Date.now();
+            const fetchNoCache = async (url) => {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 8000);
+                try {
+                    const res = await fetch(url, {
+                        signal: controller.signal,
+                        cache: 'no-store',
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache'
+                        }
+                    });
+                    if (!res.ok) return null;
+                    return await res.json();
+                } finally {
+                    clearTimeout(timer);
+                }
+            };
 
-            let rawToday = null;
-            let rawTomorrow = null;
+            const normalizePriceArray = (payload) => {
+                const arr = Array.isArray(payload) ? payload : (payload && Array.isArray(payload.prices) ? payload.prices : null);
+                if (!arr || arr.length === 0) return null;
+                return arr.map(item => {
+                    const sek = typeof item.SEK_per_kWh === 'number'
+                        ? item.SEK_per_kWh
+                        : (typeof item.ore_per_kWh === 'number' ? item.ore_per_kWh / 100 : null);
+                    return {
+                        SEK_per_kWh: sek,
+                        time_start: item.time_start
+                    };
+                }).filter(x => typeof x.SEK_per_kWh === 'number' && !Number.isNaN(x.SEK_per_kWh) && x.time_start);
+            };
 
-            try {
-                const resToday = await fetch(urlToday);
-                if (resToday.ok) rawToday = await resToday.json();
-            } catch (err) {
-                console.warn("Dagens priser kunde inte hämtas:", err);
-            }
+            const loadPricesFromTibberApi = async (todayMidnight, tomorrowMidnight) => {
+                const token = (STATE.tibberToken || '').trim();
+                if (!token) return null;
 
-            try {
-                const resTomorrow = await fetch(urlTomorrow);
-                if (resTomorrow.ok) rawTomorrow = await resTomorrow.json();
-            } catch (err) {
-                console.warn("Morgondagens priser är ännu inte publicerade:", err);
-            }
+                const query = `{
+                    viewer {
+                        homes {
+                            currentSubscription {
+                                priceInfo(resolution: QUARTER_HOURLY) {
+                                    today {
+                                        total
+                                        energy
+                                        startsAt
+                                    }
+                                    tomorrow {
+                                        total
+                                        energy
+                                        startsAt
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }`;
+
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 8000);
+                try {
+                    const res = await fetch('https://api.tibber.com/v1-beta/gql', {
+                        method: 'POST',
+                        signal: controller.signal,
+                        cache: 'no-store',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ query })
+                    });
+                    if (!res.ok) return null;
+                    const payload = await res.json();
+                    const homes = payload?.data?.viewer?.homes;
+                    if (!Array.isArray(homes) || homes.length === 0) return null;
+
+                    const homeWithPrices = homes.find(h => h?.currentSubscription?.priceInfo) || homes[0];
+                    const priceInfo = homeWithPrices?.currentSubscription?.priceInfo;
+                    if (!priceInfo) return null;
+
+                    const mapTibberList = (list) => {
+                        if (!Array.isArray(list)) return null;
+                        const mapped = list
+                            .map(item => {
+                                const val = (typeof item.energy === 'number') ? item.energy : item.total;
+                                return {
+                                    SEK_per_kWh: val,
+                                    time_start: item.startsAt
+                                };
+                            })
+                            .filter(x => typeof x.SEK_per_kWh === 'number' && !Number.isNaN(x.SEK_per_kWh) && x.time_start);
+                        return mapped.length > 0 ? mapped : null;
+                    };
+
+                    const tList = mapTibberList(priceInfo.today);
+                    const tmList = mapTibberList(priceInfo.tomorrow);
+                    if (!tList && !tmList) return null;
+
+                    return {
+                        rawToday: tList,
+                        rawTomorrow: tmList,
+                        source: 'Tibber API'
+                    };
+                } catch (err) {
+                    console.warn('Tibber API misslyckades:', err);
+                    return null;
+                } finally {
+                    clearTimeout(timer);
+                }
+            };
+
+            const loadDayFromSources = async (dateObj, isTomorrow) => {
+                const y = dateObj.getFullYear();
+                const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const d = String(dateObj.getDate()).padStart(2, '0');
+
+                const sources = [
+                    {
+                        name: 'Elpriset just nu (ENTSO-E)',
+                        url: `https://www.elprisetjustnu.se/api/v1/prices/${y}/${m}-${d}_SE3.json?nocache=${cacheBust}`
+                    },
+                    {
+                        name: 'Elmarknad.se',
+                        url: `https://zstmbmllvvrgwngsjnrr.supabase.co/functions/v1/elpris-api/v1/prices/${y}/${m}-${d}_SE3.json?_=${cacheBust}`
+                    },
+                    {
+                        name: 'Elmarknad.se',
+                        url: `https://zstmbmllvvrgwngsjnrr.supabase.co/functions/v1/elpris-api/v1/prices/${isTomorrow ? 'tomorrow' : 'today'}_SE3.json?_=${cacheBust}`
+                    },
+                    {
+                        name: 'Aktuella elpriser',
+                        url: `https://aktuellaelpriser.se/api.php?format=json&omrade=SE3&typ=${isTomorrow ? 'imorgon' : 'idag'}&_=${cacheBust}`
+                    }
+                ];
+
+                for (const srcItem of sources) {
+                    try {
+                        const json = await fetchNoCache(srcItem.url);
+                        if (srcItem.name === 'Aktuella elpriser' && json && json.data) {
+                            const list = Array.isArray(json.data) ? json.data : Object.values(json.data);
+                            const mapped = list
+                                .filter(p => p && p.period && (typeof p.pris_kr === 'number' || typeof p.pris_ore === 'number'))
+                                .map(p => {
+                                    const startPart = String(p.period).split('-')[0].trim();
+                                    const [hh, mm] = startPart.split(':');
+                                    const dt = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), Number(hh || 0), Number(mm || 0), 0, 0);
+                                    const sek = typeof p.pris_kr === 'number' ? p.pris_kr : (p.pris_ore / 100);
+                                    return { SEK_per_kWh: sek, time_start: dt.toISOString() };
+                                });
+                            if (mapped.length > 0) return { data: mapped, source: srcItem.name };
+                        } else {
+                            const normalized = normalizePriceArray(json);
+                            if (normalized && normalized.length > 0) {
+                                return { data: normalized, source: srcItem.name };
+                            }
+                        }
+                    } catch (err) {
+                        console.warn(`Källa ${srcItem.name} misslyckades:`, err);
+                    }
+                }
+                return null;
+            };
+
+            const tibberRes = STATE.tibberToken ? await loadPricesFromTibberApi(today, tomorrow) : null;
+            const resToday = tibberRes?.rawToday ? { data: tibberRes.rawToday, source: tibberRes.source } : await loadDayFromSources(today, false);
+            const resTomorrow = tibberRes?.rawTomorrow ? { data: tibberRes.rawTomorrow, source: tibberRes.source } : await loadDayFromSources(tomorrow, true);
+
+            const rawToday = resToday ? resToday.data : null;
+            const rawTomorrow = resTomorrow ? resTomorrow.data : null;
+            const activeSource = tibberRes ? tibberRes.source : ((resToday && resToday.source) || (resTomorrow && resTomorrow.source) || 'Simulerad');
+
+            console.group('[SE3 Batteri] loadPriceData');
+            console.log('Aktiv priskälla:', activeSource);
+            console.log('Källa idag:', resToday ? resToday.source : 'Ingen', '| Antal råposter:', rawToday ? rawToday.length : 0);
+            console.log('Källa imorgon:', resTomorrow ? resTomorrow.source : 'Ingen', '| Antal råposter:', rawTomorrow ? rawTomorrow.length : 0);
+            if (rawToday && rawToday.length > 0) console.log('Råvärden idag (exempel):', rawToday.slice(0, 4));
+            if (rawTomorrow && rawTomorrow.length > 0) console.log('Råvärden imorgon (exempel):', rawTomorrow.slice(0, 4));
+            console.groupEnd();
 
             STATE.rawToday = rawToday;
             STATE.rawTomorrow = rawTomorrow;
+            STATE.activeSource = activeSource;
+            STATE.fetchedAt = new Date();
             STATE.quarters = generateAllQuarters(today, tomorrow, rawToday, rawTomorrow);
+            if (STATE.selectedQuarterIndex === null && STATE.quarters.length > 0) {
+                const nowRef = new Date();
+                const curIdx = STATE.quarters.findIndex(q => nowRef >= q.startDate && nowRef < q.endDate);
+                STATE.selectedQuarterIndex = curIdx >= 0 ? curIdx : 0;
+            }
 
             if (rawToday && rawTomorrow) {
                 STATE.dataStatus = 'real';
-                updateStatus('real', 'Reella priser hela dygnet (SE3)');
-                DOM.schedule1315Text.textContent = 'Morgondagens priser är laddade & kompletta!';
+                updateStatus('real', `Reella priser hela dygnet · ${activeSource}`);
+                DOM.schedule1315Text.textContent = `Priser hämtade från ${activeSource} (idag + imorgon).`;
             } else if (rawToday) {
                 STATE.dataStatus = 'partial';
-                updateStatus('partial', 'Morgondagens priser kommer senare (kontrolleras kl 13:15)');
-                DOM.schedule1315Text.textContent = 'Dagens priser finns. Kontrollerar morgondagen automatiskt kl. 13:15.';
+                updateStatus('partial', `Reella priser idag · ${activeSource}`);
+                DOM.schedule1315Text.textContent = `Dagens priser hämtade från ${activeSource}. Kontrollerar morgondagen kl. 13:15.`;
             } else {
                 STATE.dataStatus = 'simulated';
                 updateStatus('simulated', 'Simulerade priser (API ej nåbart)');
@@ -885,77 +1207,76 @@
         }
 
         // Generate Quarters from Start Time up to 00:00 (Midnight) Next Day
-        function generateAllQuarters(todayDate, tomorrowDate, rawToday, rawTomorrow) {
+        function generateAllQuarters(todayMidnight, tomorrowMidnight, rawToday, rawTomorrow) {
             const quarters = [];
             const simPrices = generateSimulatedProfile();
-            const useNowStart = Boolean(STATE.startNowAnchor);
             const realNow = new Date();
+            const anchor = STATE.startNowAnchor || new Date(todayMidnight.getFullYear(), todayMidnight.getMonth(), todayMidnight.getDate(), 20, 0, 0, 0);
 
-            const startHour = useNowStart ? todayDate.getHours() : 20;
-            const startMinute = useNowStart ? Math.floor(todayDate.getMinutes() / 15) * 15 : 0;
-            const startTotalMins = startHour * 60 + startMinute;
+            const startQuarter = new Date(anchor);
+            startQuarter.setMinutes(Math.floor(startQuarter.getMinutes() / 15) * 15, 0, 0);
 
-            const endMidnightMins = 2880; // 48h timeline
-            const totalSpanMins = Math.max(15, endMidnightMins - startTotalMins);
-            const totalQuarters = Math.ceil(totalSpanMins / 15);
+            const endMidnight = new Date(tomorrowMidnight.getFullYear(), tomorrowMidnight.getMonth(), tomorrowMidnight.getDate(), 24, 0, 0, 0);
+            const spanMs = Math.max(15 * 60 * 1000, endMidnight.getTime() - startQuarter.getTime());
+            const totalQuarters = Math.ceil(spanMs / (15 * 60 * 1000));
+
+            const formatLocalDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            const todayKey = formatLocalDate(todayMidnight);
+            const tomorrowKey = formatLocalDate(tomorrowMidnight);
 
             for (let idx = 0; idx < totalQuarters; idx++) {
-                const totalOffsetMins = startTotalMins + idx * 15;
-                const dayOffset = Math.floor(totalOffsetMins / 1440);
-                const minsInDay = ((totalOffsetMins % 1440) + 1440) % 1440;
+                const quarterStartDate = new Date(startQuarter.getTime() + idx * 15 * 60 * 1000);
+                const quarterEndDate = new Date(quarterStartDate.getTime() + 15 * 60 * 1000);
 
-                const hour = Math.floor(minsInDay / 60);
-                const minute = minsInDay % 60;
+                const hour = quarterStartDate.getHours();
+                const minute = quarterStartDate.getMinutes();
+                const minsInDay = hour * 60 + minute;
+                const qDateKey = formatLocalDate(quarterStartDate);
 
-                const quarterStartDate = new Date(todayDate);
-                quarterStartDate.setHours(hour, minute, 0, 0);
-                quarterStartDate.setDate(todayDate.getDate() + dayOffset);
+                // Night charging window: 20:00-07:00
+                const isChargeWindow = (minsInDay >= 1200) || (minsInDay < 420);
 
-                const quarterEndDate = new Date(quarterStartDate);
-                quarterEndDate.setMinutes(quarterEndDate.getMinutes() + 15);
-
-                const isFirstNightWindow = (minsInDay >= 1200 && dayOffset === 0) || (minsInDay < 420 && dayOffset === 1);
-                const isChargeWindow = isFirstNightWindow;
-
-                // Check if this quarter is already in the past compared to right now
+                // Future check: quarter has not completely ended yet
                 const isPast = quarterEndDate <= realNow;
 
-                let endHour = hour;
-                let endMinute = minute + 15;
-                if (endMinute >= 60) {
-                    endMinute = 0;
-                    endHour = (endHour + 1) % 24;
-                }
+                const endHour = quarterEndDate.getHours();
+                const endMinute = quarterEndDate.getMinutes();
 
                 const startStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
                 const endStr = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
 
-                const rawList = dayOffset === 0 ? rawToday : rawTomorrow;
+                const rawList = (qDateKey === tomorrowKey) ? rawTomorrow : rawToday;
                 let priceÖreExclVat = null;
 
                 if (rawList && Array.isArray(rawList) && rawList.length > 0) {
-                    const match = rawList.find(item => {
+                    const dayItems = rawList.filter(item => {
                         if (!item.time_start) return false;
                         const d = new Date(item.time_start);
-                        if (d.getHours() === hour) {
-                            return rawList.length >= 80 ? d.getMinutes() === minute : true;
-                        }
-                        return false;
+                        return !Number.isNaN(d.getTime()) && formatLocalDate(d) === qDateKey;
                     });
+                    const isQuarterGranularity = dayItems.length >= 80;
+                    let match = dayItems.find(item => {
+                        const d = new Date(item.time_start);
+                        if (d.getHours() !== hour) return false;
+                        return isQuarterGranularity ? d.getMinutes() === minute : true;
+                    });
+                    if (!match && isQuarterGranularity) {
+                        match = dayItems.find(item => new Date(item.time_start).getHours() === hour);
+                    }
 
-                    if (match && match.SEK_per_kWh !== undefined) {
+                    if (match && typeof match.SEK_per_kWh === 'number' && !Number.isNaN(match.SEK_per_kWh)) {
                         priceÖreExclVat = Math.round(match.SEK_per_kWh * 100 * 100) / 100;
                     }
                 }
 
-                const isMissingPrice = (priceÖreExclVat === null);
-                if (isMissingPrice) {
+                const isMissingPrice = false;
+                if (priceÖreExclVat === null) {
                     priceÖreExclVat = simPrices[idx % simPrices.length];
                 }
 
                 quarters.push({
                     index: idx,
-                    dateStr: quarterStartDate.toISOString().split('T')[0],
+                    dateStr: qDateKey,
                     startTimeStr: startStr,
                     endTimeStr: endStr,
                     priceExclVat: priceÖreExclVat,
@@ -966,6 +1287,16 @@
                     endDate: quarterEndDate
                 });
             }
+
+            console.group('[SE3 Batteri] generateAllQuarters');
+            console.log('Antal genererade kvartar:', quarters.length, '| Start:', quarters[0]?.dateStr, quarters[0]?.startTimeStr);
+            console.log('Beräknade priser (öre/kWh exkl. moms, första 8):', quarters.slice(0, 8).map(q => ({
+                tid: `${q.dateStr} ${q.startTimeStr}`,
+                oreExclVat: q.priceExclVat,
+                natt: q.isChargeWindow,
+                passerad: q.isPast
+            })));
+            console.groupEnd();
 
             return quarters;
         }
@@ -1161,8 +1492,8 @@
             const eligibleDischargePrices = [];
 
             STATE.quarters.forEach((q, idx) => {
-                // EXPLICIT REQUIREMENT: Discharge times MUST be in the future (not past), not selected for charge, and price available
-                if (!q.isPast && !chargeSet.has(idx) && !q.isMissingPrice) {
+                // EXPLICIT REQUIREMENT: Discharge times MUST be in the future (not past) and not selected for charge
+                if (!q.isPast && !chargeSet.has(idx)) {
                     eligibleDischargeIndices.push(idx);
                     eligibleDischargePrices.push(allPrices[idx]);
                 }
@@ -1215,9 +1546,64 @@
             // Render Charts and Tables
             renderXAxis();
             renderBarChart(allPrices);
+            renderSelectedQuarterIndicator(allPrices);
             renderSlotLists();
             renderScheduleText();
             renderFullTable(allPrices);
+        }
+
+        // Render Visible Selected Quarter Price & Source Indicator
+        function renderSelectedQuarterIndicator(prices) {
+            const elTime = document.getElementById('sel-q-time');
+            const elDate = document.getElementById('sel-q-date');
+            const elStatus = document.getElementById('sel-q-status');
+            const elPrice = document.getElementById('sel-q-price');
+            const elSource = document.getElementById('sel-q-source');
+            const elUpdated = document.getElementById('sel-q-updated');
+            if (!elTime || !STATE.quarters || STATE.quarters.length === 0) return;
+
+            const idx = Math.max(0, Math.min(STATE.quarters.length - 1, STATE.selectedQuarterIndex ?? 0));
+            const q = STATE.quarters[idx];
+            const price = prices[idx];
+            const vatTag = STATE.includeVat ? 'inkl. moms' : 'exkl. moms';
+
+            const chargeSet = new Set(STATE.selectedChargeIndices);
+            const dischargeSet = new Set(STATE.selectedDischargeIndices);
+
+            let statusLabel = q.isPast ? 'Passerad' : (q.isChargeWindow ? 'Nattfönster' : 'Framtid');
+            let statusCls = 'px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-[11px]';
+            let priceCls = 'text-sm sm:text-base font-bold text-slate-100';
+
+            if (chargeSet.has(idx)) {
+                statusLabel = 'Laddning';
+                statusCls = 'px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold';
+                priceCls = 'text-sm sm:text-base font-bold text-emerald-400';
+            } else if (dischargeSet.has(idx)) {
+                statusLabel = 'Urladdning';
+                statusCls = 'px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold';
+                priceCls = 'text-sm sm:text-base font-bold text-amber-400';
+            }
+
+            const hasRealForDay = (q.dateStr === STATE.quarters[0].dateStr && STATE.rawToday && STATE.rawToday.length > 0) ||
+                                (STATE.rawTomorrow && STATE.rawTomorrow.length > 0 && STATE.rawTomorrow.some(r => new Date(r.time_start).getFullYear() === q.startDate.getFullYear() && new Date(r.time_start).getMonth() === q.startDate.getMonth() && new Date(r.time_start).getDate() === q.startDate.getDate()));
+            const sourceLabel = hasRealForDay ? STATE.activeSource : 'Simulerad (fallback)';
+
+            elTime.textContent = `${q.startTimeStr} – ${q.endTimeStr}`;
+            elDate.textContent = q.dateStr;
+            elStatus.textContent = statusLabel;
+            elStatus.className = statusCls;
+            elPrice.textContent = `${price.toFixed(2).replace('.', ',')} öre/kWh (${vatTag})`;
+            elPrice.className = priceCls;
+            elSource.textContent = `Källa: ${sourceLabel}`;
+
+            if (STATE.fetchedAt) {
+                const hh = String(STATE.fetchedAt.getHours()).padStart(2, '0');
+                const mm = String(STATE.fetchedAt.getMinutes()).padStart(2, '0');
+                const ss = String(STATE.fetchedAt.getSeconds()).padStart(2, '0');
+                elUpdated.textContent = `Hämtad: ${hh}:${mm}:${ss}`;
+            } else {
+                elUpdated.textContent = 'Hämtad: --:--:--';
+            }
         }
 
         // Render X Axis Markers
@@ -1266,28 +1652,43 @@
                 const heightPct = Math.max(10, Math.round((price / maxPrice) * 100));
 
                 const barWrapper = document.createElement('div');
+                const prevQuarter = STATE.quarters[idx - 1];
                 const nextQuarter = STATE.quarters[idx + 1];
-                const isWindowBoundary = isWindow && nextQuarter && !nextQuarter.isChargeWindow;
-                const borderDivider = isWindowBoundary ? 'border-r border-dashed border-cyan-500/60 pr-[1px] mr-[1px]' : '';
+                const isWindowStart = isWindow && (!prevQuarter || !prevQuarter.isChargeWindow);
+                const isWindowEnd = isWindow && (!nextQuarter || !nextQuarter.isChargeWindow);
+                const windowEdges = `${isWindowStart ? 'border-l border-indigo-400/50' : ''} ${isWindowEnd ? 'border-r border-indigo-400/50' : ''}`;
+                const nightZoneBg = isWindow ? 'bg-indigo-500/[0.07]' : '';
                 const currentHighlight = isCurrentQuarter ? 'ring-2 ring-cyan-400 z-10' : '';
-                barWrapper.className = `flex-1 h-full flex flex-col justify-end items-center group relative cursor-pointer ${borderDivider} ${currentHighlight}`;
+                barWrapper.className = `flex-1 h-full flex flex-col justify-end items-center group relative cursor-pointer ${nightZoneBg} ${windowEdges} ${currentHighlight}`;
 
                 let barClass = 'w-full rounded-t-[2px] transition-all duration-150 ';
+                let inlineStyle = `height: ${heightPct}%;`;
+
                 if (isCharge) {
-                    barClass += 'bg-gradient-to-t from-emerald-600 to-teal-400 shadow-md shadow-emerald-500/30 group-hover:from-emerald-500 group-hover:to-teal-300';
+                    barClass += 'bg-emerald-500 shadow-md shadow-emerald-500/30 group-hover:bg-emerald-400';
+                    inlineStyle += ' background: linear-gradient(to top, #059669, #2dd4bf);';
                 } else if (isDischarge) {
-                    barClass += 'bg-gradient-to-t from-amber-600 to-orange-400 shadow-md shadow-amber-500/30 group-hover:from-amber-500 group-hover:to-orange-300';
+                    barClass += 'bg-amber-500 shadow-md shadow-amber-500/40 group-hover:bg-amber-400';
+                    inlineStyle += ' background: linear-gradient(to top, #d97706, #fbbf24);';
                 } else if (quarter.isMissingPrice) {
                     barClass += 'bg-amber-500/15 border-t border-dashed border-amber-400/70 group-hover:bg-amber-500/25';
+                    inlineStyle += ' background: rgba(245, 158, 11, 0.16);';
                 } else if (quarter.isPast) {
                     barClass += 'bg-slate-800/40 opacity-50 group-hover:opacity-80';
+                    inlineStyle += ' background: #1e293b;';
                 } else if (isWindow) {
-                    barClass += 'bg-slate-600/80 group-hover:bg-slate-500';
+                    barClass += 'border-t border-indigo-400/70 group-hover:brightness-125';
+                    inlineStyle += ' background: repeating-linear-gradient(45deg, rgba(99, 102, 241, 0.45), rgba(99, 102, 241, 0.45) 3px, rgba(59, 130, 246, 0.25) 3px, rgba(59, 130, 246, 0.25) 6px);';
                 } else {
                     barClass += 'bg-slate-800/80 group-hover:bg-slate-700';
+                    inlineStyle += ' background: #334155;';
                 }
 
-                barWrapper.innerHTML = `<div class="${barClass}" style="height: ${heightPct}%;"></div>`;
+                const topCap = isWindowStart
+                    ? `<span class="absolute top-0 left-0 text-[9px] font-mono text-indigo-300/90 leading-none pointer-events-none select-none">20–07</span>`
+                    : '';
+
+                barWrapper.innerHTML = `${topCap}<div class="${barClass}" style="${inlineStyle}"></div>`;
 
                 const handleHover = () => {
                     let statusTag = '';
@@ -1295,8 +1696,7 @@
                         statusTag = `<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">Laddning Slot #${chargeSlotMap[idx]}</span>`;
                     } else if (isDischarge) {
                         statusTag = `<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/30 font-bold">Framtida Urladdning Slot #${dischargeSlotMap[idx]}</span>`;
-                    } else if (quarter.isMissingPrice) {
-                        statusTag = `<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/30 font-semibold">Kommer senare</span>`;
+
                     } else if (quarter.isPast) {
                         statusTag = `<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-500 border border-slate-700">Passerad tid (Ej valbar för urladdning)</span>`;
                     } else if (isWindow) {
@@ -1310,9 +1710,7 @@
                     }
 
                     const vatTag = STATE.includeVat ? 'inkl. moms' : 'exkl. moms';
-                    const priceText = quarter.isMissingPrice
-                        ? `<span class="text-amber-300">Kommer senare</span> <span class="text-slate-500 font-normal">(~${price.toFixed(1).replace('.', ',')} öre)</span>`
-                        : `${price.toFixed(1).replace('.', ',')} <span class="text-slate-400 font-normal">öre/kWh (${vatTag})</span>`;
+                    const priceText = `${price.toFixed(1).replace('.', ',')} <span class="text-slate-400 font-normal">öre/kWh (${vatTag})</span>`;
 
                     DOM.barHoverInfo.innerHTML = `
                         <div class="flex flex-wrap items-center gap-2">
@@ -1326,8 +1724,16 @@
                     `;
                 };
 
-                barWrapper.addEventListener('mouseenter', handleHover);
-                barWrapper.addEventListener('click', handleHover);
+                barWrapper.addEventListener('mouseenter', () => {
+                    handleHover();
+                    STATE.selectedQuarterIndex = idx;
+                    renderSelectedQuarterIndicator(prices);
+                });
+                barWrapper.addEventListener('click', () => {
+                    handleHover();
+                    STATE.selectedQuarterIndex = idx;
+                    renderSelectedQuarterIndicator(prices);
+                });
 
                 DOM.chartBarsContainer.appendChild(barWrapper);
             });
@@ -1481,17 +1887,14 @@
                 } else if (isDischarge) {
                     statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-400/30 font-bold">URLADDNING</span>';
                     slotText = `<span class="text-amber-400 font-bold">Ur #${dischargeSlotMap[idx]}</span>`;
-                } else if (q.isMissingPrice) {
-                    statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] bg-amber-500/15 text-amber-300 border border-amber-400/30">Kommer senare</span>';
+
                 } else if (q.isPast) {
                     statusBadge = '<span class="text-slate-600 text-[10px]">Passerad tid</span>';
                 } else if (q.isChargeWindow) {
                     statusBadge = '<span class="text-slate-400 text-[10px]">Nattfönster</span>';
                 }
 
-                const priceCellHtml = q.isMissingPrice
-                    ? `<span class="text-amber-300/90">Kommer senare</span> <span class="text-slate-500 font-normal text-[11px]">(~${price.toFixed(1).replace('.', ',')})</span>`
-                    : `${price.toFixed(1).replace('.', ',')} öre`;
+                const priceCellHtml = `${price.toFixed(1).replace('.', ',')} öre`;
 
                 tr.innerHTML = `
                     <td class="py-2 px-3 text-slate-400">${idx + 1}</td>
