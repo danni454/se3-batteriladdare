@@ -101,7 +101,7 @@
                         SE3 Batteriladdare
                         <span class="text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full">Natt & Framtida Urladdning</span>
                     </h1>
-                    <p class="text-xs text-slate-400">Laddning: 20:00–07:00 | Urladdning: Endast framtid | Elområde SE3</p>
+                    <p class="text-xs text-slate-400">Laddning: 20:00–07:00 | Urladdning: Endast framtid | Källa: Tibber API</p>
                 </div>
             </div>
 
@@ -116,7 +116,7 @@
                 <!-- Status Badge -->
                 <div id="data-status-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 text-slate-300">
                     <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse"></span>
-                    <span id="status-text" class="font-medium">Laddar spotpriser...</span>
+                    <span id="status-text" class="font-medium">Laddar Tibber-priser...</span>
                 </div>
 
                 <!-- Start From Now Toggle Button -->
@@ -124,7 +124,6 @@
                     <i class="fa-solid fa-clock-rotate-left text-cyan-400 text-xs"></i>
                     <span id="start-now-label">Starta nu</span>
                 </button>
-
 
                 <!-- Moms Toggle -->
                 <button id="vat-toggle-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition font-medium text-slate-200">
@@ -137,7 +136,6 @@
                     <i class="fa-solid fa-bolt text-cyan-400 text-xs"></i>
                     <span id="tibber-token-label">Tibber</span>
                 </button>
-
 
                 <!-- Refresh Button -->
                 <button id="refetch-btn" title="Hämta om prisdata nu" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition">
@@ -157,8 +155,8 @@
                     <i class="fa-solid fa-clock text-lg"></i>
                 </div>
                 <div>
-                    <h3 class="text-xs font-bold text-cyan-300 uppercase tracking-wider">Automatisk Prishämtning (Varje dag kl. 13:15)</h3>
-                    <p id="schedule-1315-text" class="text-xs text-slate-300 mt-0.5">Kontrollerar automatiskt publicering av morgondagens elpriser.</p>
+                    <h3 class="text-xs font-bold text-cyan-300 uppercase tracking-wider">Automatisk Tibber-hämtning (Varje dag kl. 13:15)</h3>
+                    <p id="schedule-1315-text" class="text-xs text-slate-300 mt-0.5">Hämtar publicerade priser direkt från Tibber API.</p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -176,7 +174,7 @@
                         <i class="fa-solid fa-bolt"></i> Tibber GraphQL API (api.tibber.com/v1-beta/gql)
                     </h3>
                     <p class="text-xs text-slate-400 mt-0.5">
-                        Klistra in din Tibber API-token (från <code class="text-slate-300">developer.tibber.com</code>). Appen hämtar <code class="text-slate-300">today</code> och <code class="text-slate-300">tomorrow</code> (<code class="text-slate-300">total</code> / <code class="text-slate-300">energy</code> i SEK/kWh) och prioriterar Tibber när token finns.
+                        Klistra in din Tibber API-token (från <code class="text-slate-300">developer.tibber.com</code>). Appen hämtar enbart faktiska publicerade priser (<code class="text-slate-300">today</code> och <code class="text-slate-300">tomorrow</code>) från Tibber.
                     </p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
@@ -191,7 +189,6 @@
                 </div>
             </div>
         </div>
-
 
         <!-- Controls Section: Charging & Discharging -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -378,9 +375,9 @@
                 <div>
                     <h2 id="chart-heading" class="text-base font-bold text-white flex items-center gap-2">
                         <i class="fa-solid fa-chart-column text-emerald-400"></i>
-                        Prisprofil & Tidslinje (fram till 00:00 nästa dygn)
+                        Publicerade Tibber-priser & Tidslinje
                     </h2>
-                    <p class="text-xs text-slate-400">Gröna = Laddning | Amber = Framtida Urladdning | Cyantext/Linje = Nu</p>
+                    <p class="text-xs text-slate-400">Gröna = Laddning | Amber = Framtida Urladdning | Cyantext/Linje = Nu (endast publicerade Tibber-kvartar visas)</p>
                 </div>
                 
                 <!-- Chart Legend -->
@@ -511,7 +508,7 @@
             <button id="toggle-table-btn" class="w-full flex items-center justify-between text-left text-sm font-bold text-slate-200 hover:text-white transition">
                 <span id="table-toggle-label" class="flex items-center gap-2">
                     <i class="fa-solid fa-table-cells text-slate-400"></i>
-                    Visa alla periodens kvartspriser i detaljerad tabell
+                    Visa alla publicerade kvartspriser i detaljerad tabell
                 </span>
                 <i id="table-arrow" class="fa-solid fa-chevron-down transition-transform duration-200"></i>
             </button>
@@ -557,12 +554,12 @@
             startNowAnchor: null,          // Date object if "Starta nu" is active
             rawToday: null,
             rawTomorrow: null,
-            activeSource: 'Simulerad',
+            activeSource: 'Tibber API',
             tibberToken: ((localStorage.getItem('se3_tibber_token') || 't_s00ZLvIXpLoYT3iAHy8AdelpuNj3u6d-2XrHg9azU')).trim(),
             fetchedAt: null,
             selectedQuarterIndex: null,
             dataStatus: 'loading',
-            quarters: [],                  // All quarters timeline
+            quarters: [],                  // Strictly published Tibber quarters
             selectedChargeIndices: [],    // Chosen charge indices
             selectedDischargeIndices: [], // Chosen discharge indices
             chargeSlots: [],               // Grouped charge slots
@@ -652,7 +649,7 @@
             const manifestData = {
                 name: 'SE3 Batteriladdare - Natt & Framtida Urladdning',
                 short_name: 'SE3 Batteri',
-                description: 'Optimera laddning (20:00–07:00) och framtida urladdning i SE3',
+                description: 'Optimera laddning (20:00–07:00) och framtida urladdning med priser från Tibber',
                 start_url: './',
                 display: 'standalone',
                 background_color: '#0B0F17',
@@ -673,7 +670,7 @@
 
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE_NAME = 'se3-battery-nocache-v20';
+                    const CACHE_NAME = 'se3-battery-tibber-v21';
                     self.addEventListener('install', () => self.skipWaiting());
                     self.addEventListener('activate', (event) => {
                         event.waitUntil(
@@ -684,7 +681,7 @@
                     });
                     self.addEventListener('fetch', (event) => {
                         const req = event.request;
-                        if (req.url.includes('elprisetjustnu.se')) {
+                        if (req.url.includes('api.tibber.com')) {
                             event.respondWith(fetch(req, { cache: 'no-store' }));
                             return;
                         }
@@ -728,8 +725,7 @@
                 const diffMs = STATE.nextFetchTarget - now;
 
                 if (diffMs <= 0) {
-                    // Trigger automatic refetch at 13:15
-                    showToast('Kl. 13:15 — Hämtar automatiskt morgondagens elpriser!');
+                    showToast('Kl. 13:15 — Hämtar morgondagens elpriser från Tibber!');
                     updateNext1315Target();
                     loadPriceData();
                     return;
@@ -758,7 +754,6 @@
             target.setHours(13, 15, 0, 0);
 
             if (now >= target) {
-                // If past 13:15 today, set target to tomorrow 13:15
                 target.setDate(target.getDate() + 1);
             }
 
@@ -871,11 +866,12 @@
                     showToast(`Tidslinjen startar från ${hh}:${mm}`);
                 }
 
-                if (STATE.rawToday || STATE.rawTomorrow || STATE.dataStatus === 'simulated') {
+                if (STATE.rawToday || STATE.rawTomorrow) {
                     const nowRef = new Date();
                     const todayMid = new Date(nowRef.getFullYear(), nowRef.getMonth(), nowRef.getDate(), 0, 0, 0, 0);
                     const tomorrowMid = new Date(todayMid.getTime() + 24 * 3600 * 1000);
-                    STATE.quarters = generateAllQuarters(todayMid, tomorrowMid, STATE.rawToday, STATE.rawTomorrow);
+                    STATE.quarters = buildQuartersFromTibber(todayMid, tomorrowMid, STATE.rawToday, STATE.rawTomorrow);
+                    STATE.selectedQuarterIndex = STATE.quarters.length > 0 ? 0 : null;
                     updateUI();
                 } else {
                     loadPriceData();
@@ -896,8 +892,8 @@
                     tibberLabel.textContent = 'Tibber ✓';
                     tibberBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 transition font-semibold text-cyan-300';
                 } else {
-                    tibberLabel.textContent = 'Tibber';
-                    tibberBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition font-medium text-slate-200';
+                    tibberLabel.textContent = 'Tibber (saknar token)';
+                    tibberBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 transition font-semibold text-rose-300';
                 }
             };
             syncTibberBadge();
@@ -917,7 +913,7 @@
                     else localStorage.removeItem('se3_tibber_token');
                     syncTibberBadge();
                     tibberPanel.classList.add('hidden');
-                    showToast(val ? 'Tibber token sparad — hämtar priser från Tibber...' : 'Tibber token borttagen — hämtar priser...');
+                    showToast(val ? 'Tibber token sparad — hämtar priser från Tibber...' : 'Tibber token borttagen');
                     loadPriceData();
                 });
             }
@@ -932,11 +928,10 @@
                 });
             }
 
-
             // Refresh Button
             DOM.refetchBtn.addEventListener('click', () => {
                 loadPriceData();
-                showToast('Hämtar om elpriser...');
+                showToast('Hämtar om priser från Tibber...');
             });
 
             // Toggle Full Table View
@@ -957,62 +952,28 @@
             DOM.copyAllTextBtn.addEventListener('click', () => copyScheduleText('all'));
         }
 
-        // Fetch Price Data from Elprisetjustnu API
+        // Fetch Price Data EXCLUSIVELY from Tibber GraphQL API
         async function loadPriceData() {
-            updateStatus('loading', 'Hämtar priser för SE3...');
+            const token = (STATE.tibberToken || '').trim();
+            if (!token) {
+                STATE.rawToday = null;
+                STATE.rawTomorrow = null;
+                STATE.quarters = [];
+                STATE.selectedQuarterIndex = null;
+                STATE.dataStatus = 'missing';
+                updateStatus('missing', 'Tibber API-token saknas');
+                DOM.schedule1315Text.textContent = 'Ange en giltig Tibber API-token under "Tibber" för att ladda priser.';
+                updateUI();
+                return;
+            }
+
+            updateStatus('loading', 'Hämtar priser från Tibber...');
 
             const realNowForFetch = new Date();
             const today = new Date(realNowForFetch.getFullYear(), realNowForFetch.getMonth(), realNowForFetch.getDate(), 0, 0, 0, 0);
             const tomorrow = new Date(today.getTime() + 24 * 3600 * 1000);
 
-            const formatDateStr = (d) => {
-                const year = d.getFullYear();
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                return { year, monthDay: `${month}-${day}` };
-            };
-
-            const tStr = formatDateStr(today);
-            const tmStr = formatDateStr(tomorrow);
-
-            const cacheBust = Date.now();
-            const fetchNoCache = async (url) => {
-                const controller = new AbortController();
-                const timer = setTimeout(() => controller.abort(), 8000);
-                try {
-                    const res = await fetch(url, {
-                        signal: controller.signal,
-                        cache: 'no-store',
-                        headers: {
-                            'Cache-Control': 'no-cache, no-store, must-revalidate',
-                            'Pragma': 'no-cache'
-                        }
-                    });
-                    if (!res.ok) return null;
-                    return await res.json();
-                } finally {
-                    clearTimeout(timer);
-                }
-            };
-
-            const normalizePriceArray = (payload) => {
-                const arr = Array.isArray(payload) ? payload : (payload && Array.isArray(payload.prices) ? payload.prices : null);
-                if (!arr || arr.length === 0) return null;
-                return arr.map(item => {
-                    const sek = typeof item.SEK_per_kWh === 'number'
-                        ? item.SEK_per_kWh
-                        : (typeof item.ore_per_kWh === 'number' ? item.ore_per_kWh / 100 : null);
-                    return {
-                        SEK_per_kWh: sek,
-                        time_start: item.time_start
-                    };
-                }).filter(x => typeof x.SEK_per_kWh === 'number' && !Number.isNaN(x.SEK_per_kWh) && x.time_start);
-            };
-
-            const loadPricesFromTibberApi = async (todayMidnight, tomorrowMidnight) => {
-                const token = (STATE.tibberToken || '').trim();
-                if (!token) return null;
-
+            const loadPricesFromTibberApi = async () => {
                 const query = `{
                     viewer {
                         homes {
@@ -1088,215 +1049,127 @@
                 }
             };
 
-            const loadDayFromSources = async (dateObj, isTomorrow) => {
-                const y = dateObj.getFullYear();
-                const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-                const d = String(dateObj.getDate()).padStart(2, '0');
-
-                const sources = [
-                    {
-                        name: 'Elpriset just nu (ENTSO-E)',
-                        url: `https://www.elprisetjustnu.se/api/v1/prices/${y}/${m}-${d}_SE3.json?nocache=${cacheBust}`
-                    },
-                    {
-                        name: 'Elmarknad.se',
-                        url: `https://zstmbmllvvrgwngsjnrr.supabase.co/functions/v1/elpris-api/v1/prices/${y}/${m}-${d}_SE3.json?_=${cacheBust}`
-                    },
-                    {
-                        name: 'Elmarknad.se',
-                        url: `https://zstmbmllvvrgwngsjnrr.supabase.co/functions/v1/elpris-api/v1/prices/${isTomorrow ? 'tomorrow' : 'today'}_SE3.json?_=${cacheBust}`
-                    },
-                    {
-                        name: 'Aktuella elpriser',
-                        url: `https://aktuellaelpriser.se/api.php?format=json&omrade=SE3&typ=${isTomorrow ? 'imorgon' : 'idag'}&_=${cacheBust}`
-                    }
-                ];
-
-                for (const srcItem of sources) {
-                    try {
-                        const json = await fetchNoCache(srcItem.url);
-                        if (srcItem.name === 'Aktuella elpriser' && json && json.data) {
-                            const list = Array.isArray(json.data) ? json.data : Object.values(json.data);
-                            const mapped = list
-                                .filter(p => p && p.period && (typeof p.pris_kr === 'number' || typeof p.pris_ore === 'number'))
-                                .map(p => {
-                                    const startPart = String(p.period).split('-')[0].trim();
-                                    const [hh, mm] = startPart.split(':');
-                                    const dt = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), Number(hh || 0), Number(mm || 0), 0, 0);
-                                    const sek = typeof p.pris_kr === 'number' ? p.pris_kr : (p.pris_ore / 100);
-                                    return { SEK_per_kWh: sek, time_start: dt.toISOString() };
-                                });
-                            if (mapped.length > 0) return { data: mapped, source: srcItem.name };
-                        } else {
-                            const normalized = normalizePriceArray(json);
-                            if (normalized && normalized.length > 0) {
-                                return { data: normalized, source: srcItem.name };
-                            }
-                        }
-                    } catch (err) {
-                        console.warn(`Källa ${srcItem.name} misslyckades:`, err);
-                    }
-                }
-                return null;
-            };
-
-            const tibberRes = STATE.tibberToken ? await loadPricesFromTibberApi(today, tomorrow) : null;
-            const resToday = tibberRes?.rawToday ? { data: tibberRes.rawToday, source: tibberRes.source } : await loadDayFromSources(today, false);
-            const resTomorrow = tibberRes?.rawTomorrow ? { data: tibberRes.rawTomorrow, source: tibberRes.source } : await loadDayFromSources(tomorrow, true);
-
-            const rawToday = resToday ? resToday.data : null;
-            const rawTomorrow = resTomorrow ? resTomorrow.data : null;
-            const activeSource = tibberRes ? tibberRes.source : ((resToday && resToday.source) || (resTomorrow && resTomorrow.source) || 'Simulerad');
-
-            console.group('[SE3 Batteri] loadPriceData');
-            console.log('Aktiv priskälla:', activeSource);
-            console.log('Källa idag:', resToday ? resToday.source : 'Ingen', '| Antal råposter:', rawToday ? rawToday.length : 0);
-            console.log('Källa imorgon:', resTomorrow ? resTomorrow.source : 'Ingen', '| Antal råposter:', rawTomorrow ? rawTomorrow.length : 0);
-            if (rawToday && rawToday.length > 0) console.log('Råvärden idag (exempel):', rawToday.slice(0, 4));
-            if (rawTomorrow && rawTomorrow.length > 0) console.log('Råvärden imorgon (exempel):', rawTomorrow.slice(0, 4));
-            console.groupEnd();
+            const tibberRes = await loadPricesFromTibberApi();
+            const rawToday = tibberRes ? tibberRes.rawToday : null;
+            const rawTomorrow = tibberRes ? tibberRes.rawTomorrow : null;
 
             STATE.rawToday = rawToday;
             STATE.rawTomorrow = rawTomorrow;
-            STATE.activeSource = activeSource;
+            STATE.activeSource = 'Tibber API';
             STATE.fetchedAt = new Date();
-            STATE.quarters = generateAllQuarters(today, tomorrow, rawToday, rawTomorrow);
-            if (STATE.selectedQuarterIndex === null && STATE.quarters.length > 0) {
+            STATE.quarters = buildQuartersFromTibber(today, tomorrow, rawToday, rawTomorrow);
+
+            if (STATE.quarters.length > 0) {
                 const nowRef = new Date();
                 const curIdx = STATE.quarters.findIndex(q => nowRef >= q.startDate && nowRef < q.endDate);
                 STATE.selectedQuarterIndex = curIdx >= 0 ? curIdx : 0;
+            } else {
+                STATE.selectedQuarterIndex = null;
             }
 
             if (rawToday && rawTomorrow) {
                 STATE.dataStatus = 'real';
-                updateStatus('real', `Reella priser hela dygnet · ${activeSource}`);
-                DOM.schedule1315Text.textContent = `Priser hämtade från ${activeSource} (idag + imorgon).`;
+                updateStatus('real', `Tibber API · Idag + Imorgon (${STATE.quarters.length} kvartar)`);
+                DOM.schedule1315Text.textContent = `Priser hämtade från Tibber API (idag + imorgon).`;
             } else if (rawToday) {
                 STATE.dataStatus = 'partial';
-                updateStatus('partial', `Reella priser idag · ${activeSource}`);
-                DOM.schedule1315Text.textContent = `Dagens priser hämtade från ${activeSource}. Kontrollerar morgondagen kl. 13:15.`;
+                updateStatus('partial', `Tibber API · Endast idag (${STATE.quarters.length} kvartar)`);
+                DOM.schedule1315Text.textContent = `Endast dagens priser finns på Tibber ännu. Morgondagens priser visas först när de publicerats (ca kl. 13:00).`;
+            } else if (rawTomorrow) {
+                STATE.dataStatus = 'partial';
+                updateStatus('partial', `Tibber API · Endast imorgon (${STATE.quarters.length} kvartar)`);
+                DOM.schedule1315Text.textContent = `Endast morgondagens priser finns tillgängliga på Tibber.`;
             } else {
-                STATE.dataStatus = 'simulated';
-                updateStatus('simulated', 'Simulerade priser (API ej nåbart)');
-                DOM.schedule1315Text.textContent = 'Kör med simulerade priser tills API svarar.';
+                STATE.dataStatus = 'missing';
+                updateStatus('missing', 'Inga priser tillgängliga på Tibber');
+                DOM.schedule1315Text.textContent = 'Kunde inte hämta priser från Tibber API. Kontrollera token och nätverk.';
             }
 
             updateUI();
         }
 
-        // Simulated Fallback Price Profile (öre/kWh exkl. moms)
-        function generateSimulatedProfile() {
-            const base = 48.0;
-            const sim = [];
-            for (let i = 0; i < 112; i++) {
-                let factor = 1.0;
-                if (i < 6) factor = 1.25 + Math.sin(i * 0.4) * 0.12;
-                else if (i < 12) factor = 0.95 - (i - 6) * 0.05;
-                else if (i < 20) factor = 0.65 - (i - 12) * 0.02;
-                else if (i < 34) factor = 0.35 + Math.sin((i - 20) * 0.3) * 0.08;
-                else if (i < 44) factor = 0.60 + (i - 34) * 0.05;
-                else if (i < 56) factor = 1.60 + Math.sin((i - 44) * 0.25) * 0.35;
-                else if (i < 76) factor = 1.10 + Math.cos((i - 56) * 0.2) * 0.15;
-                else if (i < 96) factor = 1.85 + Math.sin((i - 76) * 0.22) * 0.45;
-                else factor = 1.15 - (i - 96) * 0.03;
+        // Build Quarters Strictly from Published Tibber Data (No simulation, no missing slots)
+        function buildQuartersFromTibber(todayMidnight, tomorrowMidnight, rawToday, rawTomorrow) {
+            const combinedRaw = [
+                ...(Array.isArray(rawToday) ? rawToday : []),
+                ...(Array.isArray(rawTomorrow) ? rawTomorrow : [])
+            ];
+            if (combinedRaw.length === 0) return [];
 
-                const val = Math.max(5.0, base * (factor + Math.sin(i * 1.7) * 0.05));
-                sim.push(Math.round(val * 100) / 100);
-            }
-            return sim;
-        }
-
-        // Generate Quarters from Start Time up to 00:00 (Midnight) Next Day
-        function generateAllQuarters(todayMidnight, tomorrowMidnight, rawToday, rawTomorrow) {
-            const quarters = [];
-            const simPrices = generateSimulatedProfile();
             const realNow = new Date();
             const anchor = STATE.startNowAnchor || new Date(todayMidnight.getFullYear(), todayMidnight.getMonth(), todayMidnight.getDate(), 20, 0, 0, 0);
-
-            const startQuarter = new Date(anchor);
-            startQuarter.setMinutes(Math.floor(startQuarter.getMinutes() / 15) * 15, 0, 0);
-
-            const endMidnight = new Date(tomorrowMidnight.getFullYear(), tomorrowMidnight.getMonth(), tomorrowMidnight.getDate(), 24, 0, 0, 0);
-            const spanMs = Math.max(15 * 60 * 1000, endMidnight.getTime() - startQuarter.getTime());
-            const totalQuarters = Math.ceil(spanMs / (15 * 60 * 1000));
+            const startCutoff = new Date(anchor);
+            startCutoff.setMinutes(Math.floor(startCutoff.getMinutes() / 15) * 15, 0, 0);
 
             const formatLocalDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            const todayKey = formatLocalDate(todayMidnight);
-            const tomorrowKey = formatLocalDate(tomorrowMidnight);
 
-            for (let idx = 0; idx < totalQuarters; idx++) {
-                const quarterStartDate = new Date(startQuarter.getTime() + idx * 15 * 60 * 1000);
-                const quarterEndDate = new Date(quarterStartDate.getTime() + 15 * 60 * 1000);
-
-                const hour = quarterStartDate.getHours();
-                const minute = quarterStartDate.getMinutes();
-                const minsInDay = hour * 60 + minute;
-                const qDateKey = formatLocalDate(quarterStartDate);
-
-                // Night charging window: 20:00-07:00
-                const isChargeWindow = (minsInDay >= 1200) || (minsInDay < 420);
-
-                // Future check: quarter has not completely ended yet
-                const isPast = quarterEndDate <= realNow;
-
-                const endHour = quarterEndDate.getHours();
-                const endMinute = quarterEndDate.getMinutes();
-
-                const startStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-                const endStr = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
-
-                const rawList = (qDateKey === tomorrowKey) ? rawTomorrow : rawToday;
-                let priceÖreExclVat = null;
-
-                if (rawList && Array.isArray(rawList) && rawList.length > 0) {
-                    const dayItems = rawList.filter(item => {
-                        if (!item.time_start) return false;
-                        const d = new Date(item.time_start);
-                        return !Number.isNaN(d.getTime()) && formatLocalDate(d) === qDateKey;
-                    });
-                    const isQuarterGranularity = dayItems.length >= 80;
-                    let match = dayItems.find(item => {
-                        const d = new Date(item.time_start);
-                        if (d.getHours() !== hour) return false;
-                        return isQuarterGranularity ? d.getMinutes() === minute : true;
-                    });
-                    if (!match && isQuarterGranularity) {
-                        match = dayItems.find(item => new Date(item.time_start).getHours() === hour);
-                    }
-
-                    if (match && typeof match.SEK_per_kWh === 'number' && !Number.isNaN(match.SEK_per_kWh)) {
-                        priceÖreExclVat = Math.round(match.SEK_per_kWh * 100 * 100) / 100;
-                    }
-                }
-
-                const isMissingPrice = false;
-                if (priceÖreExclVat === null) {
-                    priceÖreExclVat = simPrices[idx % simPrices.length];
-                }
-
-                quarters.push({
-                    index: idx,
-                    dateStr: qDateKey,
-                    startTimeStr: startStr,
-                    endTimeStr: endStr,
-                    priceExclVat: priceÖreExclVat,
-                    isChargeWindow,
-                    isMissingPrice,
-                    isPast,
-                    startDate: quarterStartDate,
-                    endDate: quarterEndDate
+            // Deduplicate and sort chronologically by start timestamp
+            const seenTimestamps = new Set();
+            const sortedEntries = combinedRaw
+                .map(item => {
+                    const startDate = new Date(item.time_start);
+                    return {
+                        startDate,
+                        sek: item.SEK_per_kWh
+                    };
+                })
+                .filter(entry => !Number.isNaN(entry.startDate.getTime()) && typeof entry.sek === 'number' && !Number.isNaN(entry.sek))
+                .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
+                .filter(entry => {
+                    const ts = entry.startDate.getTime();
+                    if (seenTimestamps.has(ts)) return false;
+                    seenTimestamps.add(ts);
+                    return ts >= startCutoff.getTime();
                 });
+
+            if (sortedEntries.length === 0) return [];
+
+            // Detect whether Tibber returned 15-min or 60-min intervals
+            let stepMs = 15 * 60 * 1000;
+            if (sortedEntries.length >= 2) {
+                const diff = sortedEntries[1].startDate.getTime() - sortedEntries[0].startDate.getTime();
+                if (diff >= 55 * 60 * 1000) {
+                    stepMs = 60 * 60 * 1000;
+                }
             }
 
-            console.group('[SE3 Batteri] generateAllQuarters');
-            console.log('Antal genererade kvartar:', quarters.length, '| Start:', quarters[0]?.dateStr, quarters[0]?.startTimeStr);
-            console.log('Beräknade priser (öre/kWh exkl. moms, första 8):', quarters.slice(0, 8).map(q => ({
-                tid: `${q.dateStr} ${q.startTimeStr}`,
-                oreExclVat: q.priceExclVat,
-                natt: q.isChargeWindow,
-                passerad: q.isPast
-            })));
-            console.groupEnd();
+            const quarters = [];
+            sortedEntries.forEach(entry => {
+                const subCount = stepMs === 60 * 60 * 1000 ? 4 : 1;
+                for (let s = 0; s < subCount; s++) {
+                    const quarterStartDate = new Date(entry.startDate.getTime() + s * 15 * 60 * 1000);
+                    if (quarterStartDate.getTime() < startCutoff.getTime()) continue;
+                    const quarterEndDate = new Date(quarterStartDate.getTime() + 15 * 60 * 1000);
+
+                    const hour = quarterStartDate.getHours();
+                    const minute = quarterStartDate.getMinutes();
+                    const minsInDay = hour * 60 + minute;
+                    const qDateKey = formatLocalDate(quarterStartDate);
+
+                    // Night charging window: 20:00-07:00
+                    const isChargeWindow = (minsInDay >= 1200) || (minsInDay < 420);
+                    const isPast = quarterEndDate <= realNow;
+
+                    const endHour = quarterEndDate.getHours();
+                    const endMinute = quarterEndDate.getMinutes();
+
+                    const startStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                    const endStr = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
+                    const priceÖreExclVat = Math.round(entry.sek * 100 * 100) / 100;
+
+                    quarters.push({
+                        index: quarters.length,
+                        dateStr: qDateKey,
+                        startTimeStr: startStr,
+                        endTimeStr: endStr,
+                        priceExclVat: priceÖreExclVat,
+                        isChargeWindow,
+                        isPast,
+                        startDate: quarterStartDate,
+                        endDate: quarterEndDate
+                    });
+                }
+            });
 
             return quarters;
         }
@@ -1312,7 +1185,6 @@
             const INF = 1e12;
             const BAD = isMin ? INF : -INF;
 
-            // dp[i][q][k][in_block]
             const dp = Array.from({ length: N + 1 }, () =>
                 Array.from({ length: targetQ + 1 }, () =>
                     Array.from({ length: maxK + 1 }, () => [BAD, BAD])
@@ -1348,7 +1220,6 @@
 
                         // Option 2: Select quarter i
                         if (q < targetQ) {
-                            // Continue block
                             const valCont = dp[i][q][k][1];
                             if (valCont !== BAD) {
                                 const newCont = valCont + cost;
@@ -1358,7 +1229,6 @@
                                 }
                             }
 
-                            // Start new block
                             if (k < maxK) {
                                 const valNew = dp[i][q][k][0];
                                 if (valNew !== BAD) {
@@ -1461,9 +1331,81 @@
             });
         }
 
+        // Empty State Renderer when Tibber has no prices
+        function renderEmptyState() {
+            STATE.selectedChargeIndices = [];
+            STATE.selectedDischargeIndices = [];
+            STATE.chargeSlots = [];
+            STATE.dischargeSlots = [];
+
+            const chHours = Math.floor((STATE.targetQuartersCharge * 15) / 60);
+            const chMins = (STATE.targetQuartersCharge * 15) % 60;
+            DOM.chargeDurationDisplay.textContent = chHours > 0 ? `${chHours} tim ${chMins > 0 ? chMins + ' min' : ''}` : `${chMins} min`;
+            DOM.chargeQuarterDisplay.textContent = `(${STATE.targetQuartersCharge} kvartar)`;
+
+            const disHours = Math.floor((STATE.targetQuartersDischarge * 15) / 60);
+            const disMins = (STATE.targetQuartersDischarge * 15) % 60;
+            DOM.dischargeDurationDisplay.textContent = STATE.targetQuartersDischarge === 0 ? 'Avstängd (0 min)' : (disHours > 0 ? `${disHours} tim ${disMins > 0 ? disMins + ' min' : ''}` : `${disMins} min`);
+            DOM.dischargeQuarterDisplay.textContent = `(${STATE.targetQuartersDischarge} kvartar)`;
+
+            DOM.kpiAvgChargePrice.innerHTML = `--,-- <span class="text-xs text-emerald-500 font-normal">öre/kWh</span>`;
+            DOM.kpiChargeSubtext.textContent = `Inga Tibber-priser tillgängliga`;
+            DOM.kpiAvgDischargePrice.innerHTML = `--,-- <span class="text-xs text-amber-500 font-normal">öre/kWh</span>`;
+            DOM.kpiDischargeSubtext.textContent = `Inga Tibber-priser tillgängliga`;
+            DOM.kpiSpreadPrice.innerHTML = `--,-- <span class="text-xs text-cyan-500 font-normal">öre/kWh</span>`;
+            DOM.kpiSpreadSubtext.textContent = `Väntar på Tibber-data`;
+
+            const elTime = document.getElementById('sel-q-time');
+            const elDate = document.getElementById('sel-q-date');
+            const elStatus = document.getElementById('sel-q-status');
+            const elPrice = document.getElementById('sel-q-price');
+            const elSource = document.getElementById('sel-q-source');
+            const elUpdated = document.getElementById('sel-q-updated');
+            if (elTime) elTime.textContent = '--:-- – --:--';
+            if (elDate) elDate.textContent = '----/--/--';
+            if (elStatus) {
+                elStatus.textContent = 'Saknar prisdata';
+                elStatus.className = 'px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[11px]';
+            }
+            if (elPrice) elPrice.textContent = '--,-- öre/kWh';
+            if (elSource) elSource.textContent = 'Källa: Tibber API (ej tillgänglig)';
+            if (elUpdated) elUpdated.textContent = 'Hämtad: --:--:--';
+
+            DOM.chartBarsContainer.innerHTML = `
+                <div class="w-full h-full flex flex-col items-center justify-center text-center p-6 rounded-xl bg-slate-900/60 border border-dashed border-slate-700">
+                    <i class="fa-solid fa-bolt-slash text-2xl text-amber-400 mb-2"></i>
+                    <p class="text-sm font-semibold text-slate-200">Inga priser tillgängliga från Tibber just nu</p>
+                    <p class="text-xs text-slate-400 mt-1 max-w-md">
+                        ${!STATE.tibberToken
+                            ? 'Klicka på "Tibber" i menyn ovan och klistra in din Tibber API-token.'
+                            : 'Inga publicerade priser hittades för vald starttid. Morgondagens priser publiceras normalt omkring kl. 13:00.'}
+                    </p>
+                </div>
+            `;
+            DOM.chartXAxis.innerHTML = '';
+            DOM.barHoverInfo.innerHTML = `
+                <div class="flex items-center gap-2 text-slate-400">
+                    <i class="fa-solid fa-circle-info text-amber-400 text-xs"></i>
+                    <span>Prisstaplar visas enbart när priser finns publicerade på Tibber</span>
+                </div>
+            `;
+
+            DOM.chargeSlotsContainer.innerHTML = `<div class="text-center py-4 text-slate-500 text-xs font-mono">Inga Tibber-priser tillgängliga för laddning.</div>`;
+            DOM.dischargeSlotsContainer.innerHTML = `<div class="text-center py-4 text-slate-500 text-xs font-mono">Inga Tibber-priser tillgängliga för urladdning.</div>`;
+            DOM.scheduleTextArea.value = 'Inga priser tillgängliga på Tibber API.';
+            DOM.quarterTableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="py-4 px-3 text-center text-slate-500">Inga publicerade priser tillgängliga från Tibber.</td>
+                </tr>
+            `;
+        }
+
         // Main Interface Update
         function updateUI() {
-            if (!STATE.quarters || STATE.quarters.length === 0) return;
+            if (!STATE.quarters || STATE.quarters.length === 0) {
+                renderEmptyState();
+                return;
+            }
 
             const vatMultiplier = STATE.includeVat ? 1.25 : 1.0;
             const allPrices = STATE.quarters.map(q => q.priceExclVat * vatMultiplier);
@@ -1486,13 +1428,12 @@
                 : [];
             STATE.chargeSlots = groupIndicesToSlots(STATE.selectedChargeIndices, STATE.quarters, STATE.includeVat);
 
-            // --- 2. DISCHARGING OPTIMIZATION (Max revenue STRICTLY IN FUTURE quarters, excluding charge quarters & missing prices) ---
+            // --- 2. DISCHARGING OPTIMIZATION (Max revenue STRICTLY IN FUTURE quarters, excluding charge quarters) ---
             const chargeSet = new Set(STATE.selectedChargeIndices);
             const eligibleDischargeIndices = [];
             const eligibleDischargePrices = [];
 
             STATE.quarters.forEach((q, idx) => {
-                // EXPLICIT REQUIREMENT: Discharge times MUST be in the future (not past) and not selected for charge
                 if (!q.isPast && !chargeSet.has(idx)) {
                     eligibleDischargeIndices.push(idx);
                     eligibleDischargePrices.push(allPrices[idx]);
@@ -1531,7 +1472,6 @@
                 avgDischargePrice = totalDischarge / STATE.selectedDischargeIndices.length;
             }
 
-            const periodAvgPrice = allPrices.reduce((a, b) => a + b, 0) / allPrices.length;
             const spread = avgDischargePrice > 0 && avgChargePrice > 0 ? (avgDischargePrice - avgChargePrice) : 0;
 
             DOM.kpiAvgChargePrice.innerHTML = `${avgChargePrice.toFixed(1).replace('.', ',')} <span class="text-xs text-emerald-500 font-normal">öre/kWh</span>`;
@@ -1584,17 +1524,13 @@
                 priceCls = 'text-sm sm:text-base font-bold text-amber-400';
             }
 
-            const hasRealForDay = (q.dateStr === STATE.quarters[0].dateStr && STATE.rawToday && STATE.rawToday.length > 0) ||
-                                (STATE.rawTomorrow && STATE.rawTomorrow.length > 0 && STATE.rawTomorrow.some(r => new Date(r.time_start).getFullYear() === q.startDate.getFullYear() && new Date(r.time_start).getMonth() === q.startDate.getMonth() && new Date(r.time_start).getDate() === q.startDate.getDate()));
-            const sourceLabel = hasRealForDay ? STATE.activeSource : 'Simulerad (fallback)';
-
             elTime.textContent = `${q.startTimeStr} – ${q.endTimeStr}`;
             elDate.textContent = q.dateStr;
             elStatus.textContent = statusLabel;
             elStatus.className = statusCls;
             elPrice.textContent = `${price.toFixed(2).replace('.', ',')} öre/kWh (${vatTag})`;
             elPrice.className = priceCls;
-            elSource.textContent = `Källa: ${sourceLabel}`;
+            elSource.textContent = `Källa: Tibber API`;
 
             if (STATE.fetchedAt) {
                 const hh = String(STATE.fetchedAt.getHours()).padStart(2, '0');
@@ -1609,19 +1545,22 @@
         // Render X Axis Markers
         function renderXAxis() {
             const totalQ = STATE.quarters.length;
-            const axisIndices = [
+            if (totalQ === 0) {
+                DOM.chartXAxis.innerHTML = '';
+                return;
+            }
+            const axisIndices = Array.from(new Set([
                 0,
-                Math.round(totalQ * 0.18),
-                Math.round(totalQ * 0.36),
-                Math.round(totalQ * 0.54),
-                Math.round(totalQ * 0.72),
-                Math.round(totalQ * 0.88),
+                Math.round((totalQ - 1) * 0.2),
+                Math.round((totalQ - 1) * 0.4),
+                Math.round((totalQ - 1) * 0.6),
+                Math.round((totalQ - 1) * 0.8),
                 totalQ - 1
-            ];
+            ]));
             DOM.chartXAxis.innerHTML = axisIndices.map((qIdx, i) => {
                 const q = STATE.quarters[qIdx] || STATE.quarters[0];
                 const isEnd = i === axisIndices.length - 1;
-                const label = isEnd ? '00:00' : q.startTimeStr;
+                const label = isEnd ? q.endTimeStr : q.startTimeStr;
                 const cls = (i === 0) ? 'text-cyan-400 font-bold' : (isEnd ? 'text-amber-300 font-bold' : '');
                 return `<span class="${cls}">${label}</span>`;
             }).join('');
@@ -1670,9 +1609,6 @@
                 } else if (isDischarge) {
                     barClass += 'bg-amber-500 shadow-md shadow-amber-500/40 group-hover:bg-amber-400';
                     inlineStyle += ' background: linear-gradient(to top, #d97706, #fbbf24);';
-                } else if (quarter.isMissingPrice) {
-                    barClass += 'bg-amber-500/15 border-t border-dashed border-amber-400/70 group-hover:bg-amber-500/25';
-                    inlineStyle += ' background: rgba(245, 158, 11, 0.16);';
                 } else if (quarter.isPast) {
                     barClass += 'bg-slate-800/40 opacity-50 group-hover:opacity-80';
                     inlineStyle += ' background: #1e293b;';
@@ -1696,7 +1632,6 @@
                         statusTag = `<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">Laddning Slot #${chargeSlotMap[idx]}</span>`;
                     } else if (isDischarge) {
                         statusTag = `<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/30 font-bold">Framtida Urladdning Slot #${dischargeSlotMap[idx]}</span>`;
-
                     } else if (quarter.isPast) {
                         statusTag = `<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-500 border border-slate-700">Passerad tid (Ej valbar för urladdning)</span>`;
                     } else if (isWindow) {
@@ -1887,7 +1822,6 @@
                 } else if (isDischarge) {
                     statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-400/30 font-bold">URLADDNING</span>';
                     slotText = `<span class="text-amber-400 font-bold">Ur #${dischargeSlotMap[idx]}</span>`;
-
                 } else if (q.isPast) {
                     statusBadge = '<span class="text-slate-600 text-[10px]">Passerad tid</span>';
                 } else if (q.isChargeWindow) {
@@ -1921,7 +1855,7 @@
             } else if (type === 'partial') {
                 DOM.statusDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400';
             } else {
-                DOM.statusDot.className = 'w-2.5 h-2.5 rounded-full bg-orange-500';
+                DOM.statusDot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500';
             }
         }
 
