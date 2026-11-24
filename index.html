@@ -206,17 +206,17 @@
                             <p class="text-xs text-slate-400">Nattfönster: kl. 20:00 – 07:00 (Max 8 timmar)</p>
                         </div>
                         <div class="text-right">
-                            <div id="charge-duration-display" class="text-xl font-bold font-mono text-emerald-400">3 tim 0 min</div>
-                            <div id="charge-quarter-display" class="text-[11px] text-slate-400 font-mono">(12 kvartar)</div>
+                            <div id="charge-duration-display" class="text-xl font-bold font-mono text-emerald-400">7 tim 0 min</div>
+                            <div id="charge-quarter-display" class="text-[11px] text-slate-400 font-mono">(28 kvartar)</div>
                         </div>
                     </div>
 
                     <!-- Charge Slider -->
                     <div class="space-y-3 my-3">
-                        <input type="range" id="charge-slider" min="1" max="32" value="12" step="1" 
+                        <input type="range" id="charge-slider" min="0" max="32" value="28" step="1" 
                                class="charge-slider w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 focus:outline-none">
                         <div class="flex justify-between text-[11px] font-mono text-slate-400 px-1">
-                            <span>15m</span>
+                            <span>Av</span>
                             <span>1t</span>
                             <span>2t</span>
                             <span>4t</span>
@@ -228,12 +228,14 @@
                     <!-- Charge Presets -->
                     <div class="pt-2 flex flex-wrap items-center gap-1.5 mb-4">
                         <span class="text-[11px] text-slate-400 font-medium mr-1">Snabbval:</span>
+                        <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="0">Av</button>
                         <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="1">15m</button>
                         <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="4">1t</button>
                         <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="8">2t</button>
-                        <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono font-semibold" data-quarters="12">3t</button>
+                        <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="12">3t</button>
                         <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="16">4t</button>
                         <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="24">6t</button>
+                        <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono font-semibold" data-quarters="28">7t</button>
                         <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="32">8t</button>
                     </div>
                 </div>
@@ -271,14 +273,14 @@
                             </p>
                         </div>
                         <div class="text-right">
-                            <div id="discharge-duration-display" class="text-xl font-bold font-mono text-amber-400">2 tim 0 min</div>
-                            <div id="discharge-quarter-display" class="text-[11px] text-slate-400 font-mono">(8 kvartar)</div>
+                            <div id="discharge-duration-display" class="text-xl font-bold font-mono text-amber-400">Avstängd (0 min)</div>
+                            <div id="discharge-quarter-display" class="text-[11px] text-slate-400 font-mono">(0 kvartar)</div>
                         </div>
                     </div>
 
                     <!-- Discharge Slider -->
                     <div class="space-y-3 my-3">
-                        <input type="range" id="discharge-slider" min="0" max="16" value="8" step="1" 
+                        <input type="range" id="discharge-slider" min="0" max="16" value="0" step="1" 
                                class="discharge-slider w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500 focus:outline-none">
                         <div class="flex justify-between text-[11px] font-mono text-slate-400 px-1">
                             <span>Av</span>
@@ -293,11 +295,11 @@
                     <!-- Discharge Presets -->
                     <div class="pt-2 flex flex-wrap items-center gap-1.5 mb-4">
                         <span class="text-[11px] text-slate-400 font-medium mr-1">Snabbval:</span>
-                        <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="0">Av</button>
+                        <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono font-semibold" data-quarters="0">Av</button>
                         <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="1">15m</button>
                         <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="2">30m</button>
                         <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="4">1t</button>
-                        <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono font-semibold" data-quarters="8">2t</button>
+                        <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="8">2t</button>
                         <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="12">3t</button>
                         <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="16">4t</button>
                     </div>
@@ -546,9 +548,9 @@
     <script>
         // Global State
         const STATE = {
-            targetQuartersCharge: 12,      // Default 3 hours charge = 12 quarters
+            targetQuartersCharge: 28,      // Default 7 hours charge = 28 quarters
             maxSlotsCharge: 6,             // Default max 6 charge slots
-            targetQuartersDischarge: 8,    // Default 2 hours discharge = 8 quarters
+            targetQuartersDischarge: 0,    // Default OFF (0 quarters)
             maxSlotsDischarge: 6,          // Default max 6 discharge slots
             includeVat: false,             // Default exkl. moms
             startNowAnchor: null,          // Date object if "Starta nu" is active
@@ -1133,6 +1135,13 @@
                 }
             }
 
+            // Determine ONLY the immediate upcoming/current 20:00-07:00 night window
+            let nightWindowStart = new Date(realNow.getFullYear(), realNow.getMonth(), realNow.getDate(), 20, 0, 0, 0);
+            if (realNow.getHours() < 7) {
+                nightWindowStart.setDate(nightWindowStart.getDate() - 1);
+            }
+            const nightWindowEnd = new Date(nightWindowStart.getTime() + 11 * 3600 * 1000); // 07:00 next morning
+
             const quarters = [];
             sortedEntries.forEach(entry => {
                 const subCount = stepMs === 60 * 60 * 1000 ? 4 : 1;
@@ -1143,11 +1152,10 @@
 
                     const hour = quarterStartDate.getHours();
                     const minute = quarterStartDate.getMinutes();
-                    const minsInDay = hour * 60 + minute;
                     const qDateKey = formatLocalDate(quarterStartDate);
 
-                    // Night charging window: 20:00-07:00
-                    const isChargeWindow = (minsInDay >= 1200) || (minsInDay < 420);
+                    // Night charging window: strictly 20:00-07:00 of the immediate night (no following nights)
+                    const isChargeWindow = (quarterStartDate >= nightWindowStart) && (quarterStartDate < nightWindowEnd);
                     const isPast = quarterEndDate <= realNow;
 
                     const endHour = quarterEndDate.getHours();
@@ -1340,7 +1348,7 @@
 
             const chHours = Math.floor((STATE.targetQuartersCharge * 15) / 60);
             const chMins = (STATE.targetQuartersCharge * 15) % 60;
-            DOM.chargeDurationDisplay.textContent = chHours > 0 ? `${chHours} tim ${chMins > 0 ? chMins + ' min' : ''}` : `${chMins} min`;
+            DOM.chargeDurationDisplay.textContent = STATE.targetQuartersCharge === 0 ? 'Avstängd (0 min)' : (chHours > 0 ? `${chHours} tim ${chMins > 0 ? chMins + ' min' : ''}` : `${chMins} min`);
             DOM.chargeQuarterDisplay.textContent = `(${STATE.targetQuartersCharge} kvartar)`;
 
             const disHours = Math.floor((STATE.targetQuartersDischarge * 15) / 60);
@@ -1451,7 +1459,7 @@
             // Update Labels
             const chHours = Math.floor((STATE.targetQuartersCharge * 15) / 60);
             const chMins = (STATE.targetQuartersCharge * 15) % 60;
-            DOM.chargeDurationDisplay.textContent = chHours > 0 ? `${chHours} tim ${chMins > 0 ? chMins + ' min' : ''}` : `${chMins} min`;
+            DOM.chargeDurationDisplay.textContent = STATE.targetQuartersCharge === 0 ? 'Avstängd (0 min)' : (chHours > 0 ? `${chHours} tim ${chMins > 0 ? chMins + ' min' : ''}` : `${chMins} min`);
             DOM.chargeQuarterDisplay.textContent = `(${STATE.targetQuartersCharge} kvartar)`;
 
             const disHours = Math.floor((STATE.targetQuartersDischarge * 15) / 60);
