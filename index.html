@@ -206,14 +206,14 @@
                             <p class="text-xs text-slate-400">Nattfönster: kl. 20:00 – 07:00 (Max 8 timmar)</p>
                         </div>
                         <div class="text-right">
-                            <div id="charge-duration-display" class="text-xl font-bold font-mono text-emerald-400">7 tim 0 min</div>
-                            <div id="charge-quarter-display" class="text-[11px] text-slate-400 font-mono">(28 kvartar)</div>
+                            <div id="charge-duration-display" class="text-xl font-bold font-mono text-emerald-400">Avstängd (0 min)</div>
+                            <div id="charge-quarter-display" class="text-[11px] text-slate-400 font-mono">(0 kvartar)</div>
                         </div>
                     </div>
 
                     <!-- Charge Slider -->
                     <div class="space-y-3 my-3">
-                        <input type="range" id="charge-slider" min="0" max="32" value="28" step="1" 
+                        <input type="range" id="charge-slider" min="0" max="32" value="0" step="1" 
                                class="charge-slider w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 focus:outline-none">
                         <div class="flex justify-between text-[11px] font-mono text-slate-400 px-1">
                             <span>Av</span>
@@ -228,14 +228,14 @@
                     <!-- Charge Presets -->
                     <div class="pt-2 flex flex-wrap items-center gap-1.5 mb-4">
                         <span class="text-[11px] text-slate-400 font-medium mr-1">Snabbval:</span>
-                        <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="0">Av</button>
+                        <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono font-semibold" data-quarters="0">Av</button>
                         <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="1">15m</button>
                         <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="4">1t</button>
                         <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="8">2t</button>
                         <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="12">3t</button>
                         <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="16">4t</button>
                         <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="24">6t</button>
-                        <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono font-semibold" data-quarters="28">7t</button>
+                        <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="28">7t</button>
                         <button class="charge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-emerald-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="32">8t</button>
                     </div>
                 </div>
@@ -293,7 +293,7 @@
                     </div>
 
                     <!-- Discharge Presets -->
-                    <div class="pt-2 flex flex-wrap items-center gap-1.5 mb-4">
+                    <div class="pt-2 flex flex-wrap items-center gap-1.5 mb-3">
                         <span class="text-[11px] text-slate-400 font-medium mr-1">Snabbval:</span>
                         <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono font-semibold" data-quarters="0">Av</button>
                         <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="1">15m</button>
@@ -302,6 +302,22 @@
                         <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="8">2t</button>
                         <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="12">3t</button>
                         <button class="discharge-preset-btn px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-amber-600/30 border border-slate-700 text-slate-300 font-mono" data-quarters="16">4t</button>
+                    </div>
+
+                    <!-- Discharge Timing Switch (Före / Efter nattladdning 20:00–07:00) -->
+                    <div class="mb-4 p-2.5 rounded-xl bg-slate-900/80 border border-amber-500/20 flex items-center justify-between gap-2">
+                        <div>
+                            <span class="text-xs font-semibold text-slate-200 block">Urladdningsfönster (relativt 20–07)</span>
+                            <span id="discharge-window-desc" class="text-[11px] text-slate-400">Före nattladdning (t.o.m. kl. 20:00)</span>
+                        </div>
+                        <div class="inline-flex rounded-lg bg-slate-950 p-1 border border-slate-800 shrink-0" role="group">
+                            <button type="button" id="discharge-before-btn" class="px-3 py-1 rounded-md text-xs font-mono font-bold bg-amber-500 text-slate-950 transition">
+                                Före
+                            </button>
+                            <button type="button" id="discharge-after-btn" class="px-3 py-1 rounded-md text-xs font-mono font-bold text-slate-400 hover:text-slate-200 transition">
+                                Efter
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -548,10 +564,11 @@
     <script>
         // Global State
         const STATE = {
-            targetQuartersCharge: 28,      // Default 7 hours charge = 28 quarters
+            targetQuartersCharge: 0,       // Default OFF (0 quarters)
             maxSlotsCharge: 6,             // Default max 6 charge slots
             targetQuartersDischarge: 0,    // Default OFF (0 quarters)
             maxSlotsDischarge: 6,          // Default max 6 discharge slots
+            dischargeTiming: 'before',     // 'before' (före 20:00) eller 'after' (efter 07:00)
             includeVat: false,             // Default exkl. moms
             startNowAnchor: null,          // Date object if "Starta nu" is active
             rawToday: null,
@@ -562,6 +579,8 @@
             selectedQuarterIndex: null,
             dataStatus: 'loading',
             quarters: [],                  // Strictly published Tibber quarters
+            nightWindowStart: null,        // Start of active/upcoming 20:00-07:00 window
+            nightWindowEnd: null,          // End of active/upcoming 20:00-07:00 window
             selectedChargeIndices: [],    // Chosen charge indices
             selectedDischargeIndices: [], // Chosen discharge indices
             chargeSlots: [],               // Grouped charge slots
@@ -581,6 +600,9 @@
             dischargeDurationDisplay: document.getElementById('discharge-duration-display'),
             dischargeQuarterDisplay: document.getElementById('discharge-quarter-display'),
             dischargeSlotLimitBadge: document.getElementById('discharge-slot-limit-badge'),
+            dischargeBeforeBtn: document.getElementById('discharge-before-btn'),
+            dischargeAfterBtn: document.getElementById('discharge-after-btn'),
+            dischargeWindowDesc: document.getElementById('discharge-window-desc'),
 
             installAppBtn: document.getElementById('install-app-btn'),
             installAppLabel: document.getElementById('install-app-label'),
@@ -840,6 +862,23 @@
                     updateUI();
                 });
             });
+
+            // Discharge Timing Switch (Före / Efter nattladdning 20:00–07:00)
+            const setDischargeTiming = (mode) => {
+                STATE.dischargeTiming = mode;
+                if (mode === 'before') {
+                    DOM.dischargeBeforeBtn.className = 'px-3 py-1 rounded-md text-xs font-mono font-bold bg-amber-500 text-slate-950 transition';
+                    DOM.dischargeAfterBtn.className = 'px-3 py-1 rounded-md text-xs font-mono font-bold text-slate-400 hover:text-slate-200 transition';
+                    DOM.dischargeWindowDesc.textContent = 'Före nattladdning (t.o.m. kl. 20:00)';
+                } else {
+                    DOM.dischargeAfterBtn.className = 'px-3 py-1 rounded-md text-xs font-mono font-bold bg-amber-500 text-slate-950 transition';
+                    DOM.dischargeBeforeBtn.className = 'px-3 py-1 rounded-md text-xs font-mono font-bold text-slate-400 hover:text-slate-200 transition';
+                    DOM.dischargeWindowDesc.textContent = 'Efter nattladdning (från kl. 07:00)';
+                }
+                updateUI();
+            };
+            DOM.dischargeBeforeBtn.addEventListener('click', () => setDischargeTiming('before'));
+            DOM.dischargeAfterBtn.addEventListener('click', () => setDischargeTiming('after'));
 
             // Moms Toggle
             DOM.vatToggleBtn.addEventListener('click', () => {
@@ -1141,6 +1180,8 @@
                 nightWindowStart.setDate(nightWindowStart.getDate() - 1);
             }
             const nightWindowEnd = new Date(nightWindowStart.getTime() + 11 * 3600 * 1000); // 07:00 next morning
+            STATE.nightWindowStart = nightWindowStart;
+            STATE.nightWindowEnd = nightWindowEnd;
 
             const quarters = [];
             sortedEntries.forEach(entry => {
@@ -1436,13 +1477,17 @@
                 : [];
             STATE.chargeSlots = groupIndicesToSlots(STATE.selectedChargeIndices, STATE.quarters, STATE.includeVat);
 
-            // --- 2. DISCHARGING OPTIMIZATION (Max revenue STRICTLY IN FUTURE quarters, excluding charge quarters) ---
+            // --- 2. DISCHARGING OPTIMIZATION (Max revenue STRICTLY IN FUTURE quarters, before or after 20:00-07:00 window) ---
             const chargeSet = new Set(STATE.selectedChargeIndices);
             const eligibleDischargeIndices = [];
             const eligibleDischargePrices = [];
 
             STATE.quarters.forEach((q, idx) => {
-                if (!q.isPast && !chargeSet.has(idx)) {
+                const inTimingWindow = STATE.dischargeTiming === 'before'
+                    ? (STATE.nightWindowStart && q.endDate <= STATE.nightWindowStart)
+                    : (STATE.nightWindowEnd && q.startDate >= STATE.nightWindowEnd);
+
+                if (!q.isPast && !chargeSet.has(idx) && inTimingWindow) {
                     eligibleDischargeIndices.push(idx);
                     eligibleDischargePrices.push(allPrices[idx]);
                 }
